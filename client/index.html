@@ -3,179 +3,615 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ABYSS CHRONICLE 深淵編年史</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<title>勇者傳說 ─ 魔王討伐之旅</title>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/api.js"></script>
 <style>
 :root {
-  --bg:#09080f; --bg2:#0f0d1a; --bg3:#161226; --bg4:#1e1838;
-  --border:#2a2245; --border-hi:#4a3a7a;
-  --gold:#c8a84b; --gold-dim:#7a6230; --gold-glow:rgba(200,168,75,.18);
-  --silver:#c0cad8; --red:#e05050; --red-glow:rgba(192,57,43,.25);
-  --blue:#5ba3e8; --green:#5dc98a; --purple:#b07de0;
-  --text:#e2ddf5; --text-dim:#8880aa;
-  --tab-h:64px;
+  /* ── DQ Palette: royal navy + deep gold + crimson ── */
+  --bg:      #0a0e1a;
+  --bg2:     #0f1628;
+  --bg3:     #141d34;
+  --bg4:     #1a2540;
+  --win:     #0d1830;      /* dialog window bg */
+  --win2:    #162040;
+
+  --border:     #2a4070;
+  --border-hi:  #4a70b0;
+  --border-gold:#8a6820;
+  --border-gold-hi:#c8a030;
+
+  --gold:    #f0c040;
+  --gold2:   #c89820;
+  --gold-dim:#7a5e18;
+  --gold-glow:rgba(240,192,64,.20);
+
+  --blue:    #60a8f8;
+  --blue-dim:#2860a8;
+  --sky:     #48c8f8;
+  --white:   #e8eef8;
+  --silver:  #a8b8d0;
+  --red:     #f03830;
+  --red2:    #c02820;
+  --green:   #28d870;
+  --purple:  #c848f8;
+
+  --text:    #d8e4f4;
+  --text-dim:#6880a8;
+  --text-hi: #f0f4ff;
+
+  /* DQ window chrome */
+  --win-border: 4px solid var(--border-gold);
+  --win-shadow: 0 0 0 2px var(--gold-dim), 0 8px 32px rgba(0,0,0,.8), inset 0 1px 0 rgba(240,192,64,.08);
+
+  --tab-h: 64px;
 }
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-/* Base font bigger — 16px root so rem values are readable */
 html{font-size:16px}
-body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',serif;min-height:100vh;overflow-x:hidden;-webkit-text-size-adjust:100%}
-body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:.4}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Noto Serif TC',serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-text-size-adjust:100%;
+  cursor:default;
+}
+
+/* ── Starfield background ── */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:
+    radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 40%, rgba(200,230,255,.5) 0%, transparent 100%),
+    radial-gradient(2px 2px at 40% 10%, rgba(255,255,255,.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 60%, rgba(255,255,255,.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 25%, rgba(200,220,255,.6) 0%, transparent 100%),
+    radial-gradient(2px 2px at 80% 75%, rgba(255,255,255,.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 45%, rgba(255,255,255,.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 15% 80%, rgba(200,230,255,.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 90%, rgba(255,255,255,.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 35% 70%, rgba(255,255,255,.3) 0%, transparent 100%),
+    linear-gradient(180deg, #050810 0%, #0a0e1a 40%, #060c18 100%);
+  pointer-events:none;
+  z-index:0;
+}
+
+/* Subtle scan-line texture */
+body::after{
+  content:'';
+  position:fixed;inset:0;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,.08) 2px,
+    rgba(0,0,0,.08) 4px
+  );
+  pointer-events:none;z-index:1;
+  animation:scanPan 8s linear infinite;
+}
+@keyframes scanPan{from{background-position:0 0}to{background-position:0 40px}}
+
+/* ─ DQ WINDOW mixin ─
+   The iconic thick-border window with corner ornaments */
+.dq-win{
+  background:var(--win);
+  border:var(--win-border);
+  border-radius:4px;
+  box-shadow:var(--win-shadow);
+  position:relative;
+}
+/* Corner diamond ornaments */
+.dq-win::before,.dq-win::after{
+  content:'◆';
+  position:absolute;
+  color:var(--gold);
+  font-size:.8rem;
+  line-height:1;
+}
+.dq-win::before{top:-10px;left:-10px}
+.dq-win::after{bottom:-10px;right:-10px}
 
 /* ─ SCREENS ─ */
-.screen{display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px}
+.screen{
+  display:none;min-height:100vh;
+  flex-direction:column;align-items:center;justify-content:center;
+  padding:24px 16px;position:relative;z-index:2;
+}
 .screen.active{display:flex}
-.screen-full{display:none;min-height:100vh}
+.screen-full{display:none;min-height:100vh;position:relative;z-index:2}
 .screen-full.active{display:flex}
 
-/* ─ BUTTONS ─ */
-.btn{font-family:'Cinzel',serif;font-size:1rem;font-weight:600;letter-spacing:3px;background:transparent;border:1px solid var(--gold);color:var(--gold);padding:12px 28px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;min-height:44px}
-.btn:hover,.btn:active{background:rgba(200,168,75,.12);box-shadow:0 0 20px var(--gold-glow)}
+/* ─ BUTTONS — DQ menu style ─ */
+.btn{
+  font-family:'Noto Serif TC',serif;
+  font-size:1rem;font-weight:700;
+  background:var(--win);
+  border:3px solid var(--border-gold);
+  color:var(--gold);
+  padding:12px 28px;
+  cursor:pointer;
+  transition:all .12s;
+  border-radius:3px;
+  box-shadow:0 0 0 1px var(--gold-dim), inset 0 1px 0 rgba(240,192,64,.12);
+  min-height:44px;
+  letter-spacing:2px;
+  position:relative;
+}
+.btn::before{
+  content:'▶';
+  position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  font-size:.7rem;color:var(--gold);
+  opacity:0;transition:opacity .1s;
+}
+.btn:hover{
+  background:var(--bg3);
+  border-color:var(--gold);
+  color:var(--gold);
+  box-shadow:0 0 12px var(--gold-glow), 0 0 0 1px var(--gold-dim);
+  padding-left:36px;
+}
+.btn:hover::before{opacity:1}
+.btn:active{background:var(--bg4);transform:translateY(1px)}
 .btn:disabled{opacity:.35;cursor:not-allowed}
-.btn-red{border-color:var(--red);color:var(--red)}.btn-red:hover,.btn-red:active{background:rgba(224,80,80,.12)}
-.btn-sm{font-size:.85rem;padding:9px 18px;letter-spacing:2px;min-height:40px}
-.btn-full{width:100%}
+
+.btn-red{
+  border-color:#803020;color:var(--red);
+  box-shadow:0 0 0 1px #601810;
+}
+.btn-red:hover{border-color:var(--red);color:var(--red);box-shadow:0 0 12px rgba(240,56,48,.3),0 0 0 1px #601810}
+
+.btn-ghost{
+  background:transparent;
+  border-color:var(--border-hi);
+  color:var(--silver);
+  box-shadow:0 0 0 1px var(--border);
+}
+.btn-ghost:hover{border-color:var(--blue);color:var(--white);box-shadow:0 0 8px rgba(96,168,248,.25),0 0 0 1px var(--border)}
+
+.btn-sm{font-size:.88rem;padding:9px 18px;min-height:40px}
+.btn-full{width:100%;text-align:left}
 
 /* ─ INPUTS ─ */
-.inp{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Crimson Pro',serif;font-size:1.1rem;padding:12px 16px;outline:none;transition:border-color .2s;min-height:48px;-webkit-appearance:none;border-radius:0}
-.inp:focus{border-color:var(--gold-dim)}
-.inp-label{display:block;font-family:'Cinzel',serif;font-size:.78rem;letter-spacing:3px;color:var(--gold-dim);margin-bottom:8px}
-.inp-group{margin-bottom:20px}
+.inp{
+  width:100%;
+  background:var(--bg3);
+  border:2px solid var(--border);
+  color:var(--white);
+  font-family:'Noto Serif TC',serif;
+  font-size:1rem;
+  padding:12px 16px;
+  outline:none;
+  transition:all .15s;
+  min-height:48px;
+  border-radius:3px;
+  -webkit-appearance:none;
+}
+.inp:focus{
+  border-color:var(--border-gold-hi);
+  background:var(--bg4);
+  box-shadow:0 0 8px var(--gold-glow);
+}
+.inp-label{
+  display:block;
+  font-family:'DotGothic16',monospace;
+  font-size:.82rem;font-weight:400;
+  color:var(--gold);
+  margin-bottom:7px;
+  letter-spacing:3px;
+}
+.inp-group{margin-bottom:18px}
 
 /* ─ TYPOGRAPHY ─ */
-.title-xl{font-family:'Cinzel',serif;font-size:clamp(2.8rem,8vw,5rem);font-weight:900;color:var(--gold);text-shadow:0 0 40px rgba(200,168,75,.4);letter-spacing:6px;line-height:1.1;animation:titlePulse 4s ease-in-out infinite;text-align:center}
-@keyframes titlePulse{0%,100%{text-shadow:0 0 40px rgba(200,168,75,.4)}50%{text-shadow:0 0 60px rgba(200,168,75,.7),0 0 120px rgba(200,168,75,.3)}}
-.title-sm{font-family:'Cinzel',serif;font-size:1.4rem;font-weight:600;color:var(--gold);letter-spacing:3px}
-.subtitle{font-family:'Cinzel',serif;font-size:.9rem;color:var(--silver);letter-spacing:8px;opacity:.7;text-align:center}
-.divider{text-align:center;color:var(--gold-dim);font-size:.85rem;letter-spacing:5px;margin:10px 0 20px}
-.lore{font-size:1.05rem;line-height:1.9;color:var(--text-dim);font-style:italic;border-left:2px solid var(--gold-dim);padding-left:18px}
+.title-xl{
+  font-family:'DotGothic16',monospace;
+  font-size:clamp(2.4rem,8vw,4.5rem);
+  font-weight:400;
+  color:var(--gold);
+  text-shadow:
+    0 0 20px rgba(240,192,64,.5),
+    0 0 60px rgba(240,192,64,.2),
+    2px 2px 0 rgba(0,0,0,.8);
+  line-height:1.15;
+  text-align:center;
+  animation:titleGlow 3s ease-in-out infinite;
+  letter-spacing:4px;
+}
+@keyframes titleGlow{
+  0%,100%{text-shadow:0 0 20px rgba(240,192,64,.5),2px 2px 0 rgba(0,0,0,.8)}
+  50%{text-shadow:0 0 40px rgba(240,192,64,.9),0 0 80px rgba(240,192,64,.3),2px 2px 0 rgba(0,0,0,.8)}
+}
+.title-sm{
+  font-family:'DotGothic16',monospace;
+  font-size:1.2rem;
+  color:var(--gold);
+  letter-spacing:4px;
+}
+.subtitle{
+  font-family:'DotGothic16',monospace;
+  font-size:.8rem;color:var(--silver);
+  letter-spacing:6px;text-align:center;margin-top:8px;
+}
+.divider{
+  text-align:center;
+  color:var(--border-gold-hi);
+  font-family:'DotGothic16',monospace;
+  font-size:.78rem;letter-spacing:4px;
+  margin:12px 0 20px;
+  display:flex;align-items:center;gap:10px;
+}
+.divider::before,.divider::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,transparent,var(--border-gold),transparent);
+}
+.lore{
+  font-size:.95rem;line-height:2;color:var(--silver);
+  border-left:3px solid var(--border-gold);
+  padding-left:16px;
+}
 
-/* ─ PANEL ─ */
-.panel{background:var(--bg2);border:1px solid var(--border);padding:20px}
-.panel-gold{border-color:var(--gold-dim)}
+/* ─ PANEL (DQ window style) ─ */
+.panel{
+  background:var(--win);
+  border:3px solid var(--border-gold);
+  border-radius:3px;
+  padding:18px;
+  box-shadow:var(--win-shadow);
+}
+.panel-blue{border-color:var(--border-hi);box-shadow:0 0 0 1px var(--border),0 8px 32px rgba(0,0,0,.8)}
 
 /* ─ BARS ─ */
-.bar-wrap{margin-bottom:10px}
-.bar-label{display:flex;justify-content:space-between;font-size:.82rem;color:var(--text-dim);margin-bottom:4px}
-.bar-track{height:8px;background:var(--bg3);border:1px solid var(--border);overflow:hidden;border-radius:1px}
-.bar-fill{height:100%;transition:width .5s ease}
-.bar-hp .bar-fill{background:linear-gradient(90deg,#c0392b,#e74c3c)}
-.bar-mp .bar-fill{background:linear-gradient(90deg,#2980b9,var(--blue))}
-.bar-xp .bar-fill{background:linear-gradient(90deg,var(--gold-dim),var(--gold))}
+.bar-wrap{margin-bottom:9px}
+.bar-label{display:flex;justify-content:space-between;font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--gold);margin-bottom:4px;letter-spacing:1px}
+.bar-track{
+  height:10px;
+  background:rgba(0,0,0,.5);
+  border:1px solid var(--border);
+  border-radius:2px;
+  overflow:hidden;
+}
+.bar-fill{height:100%;transition:width .5s ease;border-radius:2px}
+.bar-hp  .bar-fill{background:linear-gradient(90deg,#a01818,#f03030,#f06060)}
+.bar-mp  .bar-fill{background:linear-gradient(90deg,#1830a0,#2870f0,#60a8f8)}
+.bar-xp  .bar-fill{background:linear-gradient(90deg,var(--gold-dim),var(--gold),#f8e080)}
 
 /* ─ STAT ROW ─ */
-.stat-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(42,34,69,.5)}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(42,64,112,.5)}
 .stat-row:last-child{border:none}
-.stat-key{font-size:.82rem;color:var(--text-dim);letter-spacing:1px}
-.stat-val{font-family:'Cinzel',serif;font-size:.95rem;color:var(--silver)}
+.stat-key{font-family:'DotGothic16',monospace;font-size:.8rem;color:var(--gold);letter-spacing:1px}
+.stat-val{font-family:'DotGothic16',monospace;font-size:.9rem;color:var(--white)}
 
 /* ─ SECTION HEAD ─ */
-.sec{font-family:'Cinzel',serif;font-size:.75rem;letter-spacing:4px;color:var(--gold-dim);border-bottom:1px solid var(--border);padding-bottom:5px;margin:16px 0 10px}
+.sec{
+  font-family:'DotGothic16',monospace;
+  font-size:.75rem;letter-spacing:4px;
+  color:var(--gold);
+  border-bottom:1px solid var(--border-gold);
+  padding-bottom:5px;margin:16px 0 10px;
+}
+.sec::before{content:'◆ '}
 
 /* ─ NOTIFY ─ */
-#notify{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:90%;max-width:340px}
-.notif{background:var(--bg3);border:1px solid var(--border-hi);padding:12px 18px;font-size:1rem;animation:notifIn .3s ease;text-align:center}
-.notif.err{border-color:var(--red);color:#ffaaaa}
-.notif.ok{border-color:var(--green);color:#90dba8}
-.notif.info{border-color:var(--gold-dim);color:var(--gold)}
-@keyframes notifIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+#notify{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:90%;max-width:380px}
+.notif{
+  background:var(--win);
+  border:3px solid var(--border-gold);
+  border-radius:3px;
+  padding:12px 18px;
+  font-family:'DotGothic16',monospace;font-size:.88rem;
+  animation:notifIn .2s ease;
+  text-align:center;
+  color:var(--white);
+  box-shadow:var(--win-shadow);
+  letter-spacing:1px;
+}
+.notif.err{border-color:var(--red2);color:var(--red)}
+.notif.ok{border-color:#186030;color:var(--green)}
+.notif.info{border-color:var(--border-gold-hi);color:var(--gold)}
+@keyframes notifIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
 
-/* ═══════════ TITLE ═══════════ */
-#s-title{background:radial-gradient(ellipse at 50% 30%,#1a1040,var(--bg) 70%)}
-.title-ornament{font-size:1.8rem;color:var(--gold-dim);letter-spacing:16px;margin-bottom:14px;text-align:center}
-.title-lore-box{max-width:480px;margin:28px auto;text-align:left}
-.title-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:28px}
+/* ═══════════ TITLE SCREEN ═══════════ */
+#s-title{
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 30%,rgba(30,50,100,.5) 0%,transparent 70%),
+    var(--bg);
+}
+.title-ornament{
+  font-family:'DotGothic16',monospace;
+  font-size:.9rem;letter-spacing:10px;
+  color:var(--border-gold-hi);
+  text-align:center;margin-bottom:20px;
+  animation:ornamentFlash 2s ease-in-out infinite;
+}
+@keyframes ornamentFlash{0%,100%{opacity:.6}50%{opacity:1}}
+.title-lore-box{max-width:480px;margin:28px auto}
+.title-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:32px}
+
+/* Blinking "press start" style */
+.title-press{
+  font-family:'DotGothic16',monospace;
+  font-size:.85rem;color:var(--white);
+  letter-spacing:4px;
+  animation:blink 1.2s step-end infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
 /* ═══════════ AUTH ═══════════ */
-#s-auth{background:radial-gradient(ellipse at 50% 20%,#140e2a,var(--bg) 60%)}
-.auth-box{width:100%;max-width:400px}
-.auth-tabs{display:flex;gap:0;margin-bottom:24px}
-.auth-tab{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text-dim);font-family:'Cinzel',serif;font-size:.88rem;letter-spacing:2px;padding:12px;cursor:pointer;transition:all .2s;min-height:48px}
-.auth-tab.active{background:var(--bg2);border-color:var(--gold-dim);color:var(--gold)}
+#s-auth{background:var(--bg)}
+.auth-box{
+  width:100%;max-width:400px;
+  background:var(--win);
+  border:var(--win-border);
+  border-radius:3px;
+  padding:28px 24px;
+  box-shadow:var(--win-shadow);
+  position:relative;
+}
+/* Four-corner ornaments on auth box */
+.auth-box::before,.auth-box::after{content:'◆';position:absolute;color:var(--gold);font-size:.9rem}
+.auth-box::before{top:-11px;left:-11px}
+.auth-box::after{bottom:-11px;right:-11px}
+.auth-tabs{display:flex;gap:6px;margin-bottom:22px}
+.auth-tab{
+  flex:1;
+  background:var(--bg3);
+  border:2px solid var(--border);
+  color:var(--text-dim);
+  font-family:'DotGothic16',monospace;
+  font-size:.85rem;letter-spacing:2px;
+  padding:10px;cursor:pointer;transition:all .15s;min-height:44px;
+  border-radius:2px;
+}
+.auth-tab.active{
+  background:var(--bg4);
+  border-color:var(--border-gold-hi);
+  color:var(--gold);
+  box-shadow:0 0 8px var(--gold-glow);
+}
 
 /* ═══════════ CHAR SELECT ═══════════ */
-#s-chars{background:radial-gradient(ellipse at 50% 0%,#140e2a,var(--bg) 60%)}
-.char-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;max-width:700px;width:100%;margin-bottom:20px}
-.char-card{background:var(--bg2);border:1px solid var(--border);padding:20px 14px;cursor:pointer;transition:all .2s;text-align:center;-webkit-tap-highlight-color:transparent}
-.char-card:hover,.char-card:active{border-color:var(--gold-dim);background:var(--bg3)}
-.char-card-icon{font-size:2.8rem;display:block;margin-bottom:10px}
-.char-card-name{font-family:'Cinzel',serif;font-size:1rem;color:var(--gold);display:block;margin-bottom:5px}
-.char-card-sub{font-size:.88rem;color:var(--text-dim)}
-.char-card-new{border-style:dashed;color:var(--text-dim)}
+#s-chars{background:var(--bg)}
+.char-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;max-width:700px;width:100%;margin-bottom:20px}
+.char-card{
+  background:var(--win);
+  border:3px solid var(--border-gold);
+  border-radius:3px;
+  padding:20px 14px;cursor:pointer;
+  transition:all .15s;
+  text-align:center;
+  box-shadow:var(--win-shadow);
+  -webkit-tap-highlight-color:transparent;
+  position:relative;
+}
+.char-card:hover,.char-card:active{
+  border-color:var(--gold);
+  background:var(--bg3);
+  box-shadow:0 0 16px var(--gold-glow),0 0 0 1px var(--gold-dim);
+}
+.char-card-icon{font-size:3rem;display:block;margin-bottom:10px}
+.char-card-name{
+  font-family:'DotGothic16',monospace;
+  font-size:.95rem;color:var(--gold);
+  display:block;margin-bottom:6px;letter-spacing:1px;
+}
+.char-card-sub{font-size:.82rem;color:var(--silver)}
+.char-card-new{border-style:dashed;border-color:var(--border);background:var(--bg2)}
+.char-card-new:hover{border-color:var(--border-gold)}
 
 /* ═══════════ CHAR CREATE ═══════════ */
-#s-create{background:radial-gradient(ellipse at 50% 0%,#0e0a1e,var(--bg) 60%);justify-content:flex-start;padding-top:30px}
-.job-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px}
+#s-create{background:var(--bg);justify-content:flex-start;padding-top:28px}
+.job-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:24px}
 @media(min-width:600px){.job-grid{grid-template-columns:repeat(4,1fr)}}
-.job-card{background:var(--bg2);border:1px solid var(--border);padding:18px 12px;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent}
-.job-card:hover,.job-card:active{border-color:var(--border-hi);background:var(--bg3)}
-.job-card.sel{border-color:var(--gold)}
-.job-card.sel::before{content:'';position:absolute;inset:0;background:var(--gold-glow)}
-.job-icon{font-size:2.4rem;display:block;margin-bottom:8px}
-.job-name{font-family:'Cinzel',serif;font-size:.9rem;color:var(--gold);letter-spacing:2px;display:block;margin-bottom:5px}
-.job-desc{font-size:.85rem;color:var(--text-dim);line-height:1.5;font-style:italic}
-.job-stat{font-size:.8rem;color:var(--silver);margin-top:6px}
+.job-card{
+  background:var(--win);border:3px solid var(--border);
+  border-radius:3px;padding:18px 12px;text-align:center;cursor:pointer;
+  transition:all .15s;position:relative;
+  -webkit-tap-highlight-color:transparent;
+  box-shadow:0 4px 16px rgba(0,0,0,.5);
+}
+.job-card:hover{border-color:var(--border-gold);background:var(--bg3)}
+.job-card.sel{border-color:var(--gold);background:var(--bg3);box-shadow:0 0 16px var(--gold-glow)}
+.job-card.sel::after{content:'◀ 已選擇';position:absolute;bottom:6px;right:8px;font-family:'DotGothic16',monospace;font-size:.65rem;color:var(--gold)}
+.job-icon{font-size:2.6rem;display:block;margin-bottom:8px}
+.job-name{font-family:'DotGothic16',monospace;font-size:.9rem;color:var(--gold);display:block;margin-bottom:5px;letter-spacing:2px}
+.job-desc{font-size:.82rem;color:var(--silver);line-height:1.5}
+.job-stat{font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--sky);margin-top:6px}
 
 /* ═══════════ MAIN GAME — DESKTOP ═══════════ */
 #s-game{flex-direction:row;height:100vh;overflow:hidden}
 
-/* Desktop sidebar */
-.sidebar{width:220px;min-width:200px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;padding:16px;flex-shrink:0}
-.sidebar::-webkit-scrollbar{width:3px}.sidebar::-webkit-scrollbar-thumb{background:var(--border-hi)}
-.char-portrait{width:80px;height:80px;margin:0 auto 12px;border:2px solid var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:2.8rem;background:var(--bg3);position:relative;flex-shrink:0}
-.char-portrait::after{content:'';position:absolute;inset:-4px;border:1px solid var(--border)}
-.char-name-sb{font-family:'Cinzel',serif;font-size:1rem;color:var(--gold);text-align:center;margin-bottom:2px}
-.char-job-sb{font-size:.8rem;color:var(--text-dim);text-align:center;letter-spacing:2px;margin-bottom:14px}
-.skill-item{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;margin-bottom:4px;background:var(--bg3);border:1px solid var(--border);font-size:.88rem;color:var(--silver);cursor:pointer;transition:all .15s;min-height:38px}
-.skill-item:hover{border-color:var(--gold-dim);color:var(--gold)}
-.equip-slot{display:flex;align-items:center;gap:8px;padding:6px 10px;margin-bottom:4px;background:var(--bg3);border:1px solid var(--border);font-size:.85rem}
-.equip-slot-lbl{color:var(--text-dim);font-size:.75rem;width:36px;flex-shrink:0}
-.rarity-common{color:var(--silver)}.rarity-rare{color:var(--blue)}.rarity-epic{color:var(--purple)}.rarity-legend{color:var(--gold)}
+.sidebar{
+  width:220px;min-width:200px;
+  background:var(--win);
+  border-right:3px solid var(--border-gold);
+  display:flex;flex-direction:column;overflow-y:auto;padding:14px;flex-shrink:0;
+}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border-gold);border-radius:2px}
+
+.char-portrait{
+  width:80px;height:80px;margin:0 auto 12px;
+  border:3px solid var(--border-gold);
+  display:flex;align-items:center;justify-content:center;font-size:2.8rem;
+  background:var(--bg3);
+  position:relative;flex-shrink:0;
+  box-shadow:0 0 12px var(--gold-glow);
+}
+.char-portrait::before,.char-portrait::after{content:'◆';position:absolute;color:var(--gold-dim);font-size:.55rem}
+.char-portrait::before{top:-7px;left:-7px}
+.char-portrait::after{bottom:-7px;right:-7px}
+.char-name-sb{font-family:'DotGothic16',monospace;font-size:.95rem;color:var(--gold);text-align:center;margin-bottom:2px;letter-spacing:2px}
+.char-job-sb{font-family:'DotGothic16',monospace;font-size:.72rem;color:var(--silver);text-align:center;margin-bottom:14px;letter-spacing:2px}
+
+.skill-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:6px 10px;margin-bottom:4px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:2px;
+  font-family:'DotGothic16',monospace;font-size:.78rem;color:var(--silver);
+  cursor:pointer;transition:all .12s;min-height:36px;letter-spacing:1px;
+}
+.skill-item:hover{border-color:var(--border-gold);color:var(--gold)}
+
+.equip-slot{
+  display:flex;align-items:center;gap:8px;
+  padding:5px 10px;margin-bottom:4px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:2px;font-size:.82rem;
+}
+.equip-slot-lbl{
+  font-family:'DotGothic16',monospace;
+  color:var(--text-dim);font-size:.7rem;width:36px;flex-shrink:0;letter-spacing:1px;
+}
+.rarity-common{color:var(--silver)}
+.rarity-rare{color:var(--sky)}
+.rarity-epic{color:var(--purple)}
+.rarity-legend{color:var(--gold)}
 
 /* Story area */
 .story-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.story-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
-.chapter-lbl{font-family:'Cinzel',serif;font-size:.95rem;color:var(--gold);letter-spacing:2px}
-.loc-lbl{font-size:.85rem;color:var(--text-dim);font-style:italic}
-.story-scroll{flex:1;overflow-y:auto;padding:24px 28px}
-.story-scroll::-webkit-scrollbar{width:4px}.story-scroll::-webkit-scrollbar-thumb{background:var(--border-hi)}
-.story-entry{margin-bottom:20px;animation:entryIn .35s ease forwards}
-@keyframes entryIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
-.stext{font-size:1.05rem;line-height:1.95;color:var(--text);white-space:pre-wrap}
-.stext.narration{border-left:2px solid var(--border-hi);padding-left:14px}
-.stext.player-action{color:var(--gold);font-style:italic}.stext.player-action::before{content:'⚔ '}
-.stext.reward{color:var(--gold);padding:10px 14px;border:1px solid var(--gold-dim);background:var(--gold-glow);font-size:1rem}
-.stext.system{color:var(--text-dim);font-size:.9rem;font-style:italic}
-.choices-area{border-top:1px solid var(--border);padding:14px 18px;background:var(--bg2);flex-shrink:0}
-.timer-bar-wrap{margin-bottom:8px}
-.timer-bar{height:3px;background:var(--gold);transition:width linear}
-.timer-txt{font-size:.8rem;color:var(--text-dim);text-align:right;margin-top:3px}
-.choice-btn{display:flex;align-items:center;gap:12px;width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Crimson Pro',serif;font-size:1.05rem;padding:12px 16px;text-align:left;cursor:pointer;transition:all .18s;margin-bottom:8px;min-height:48px;-webkit-tap-highlight-color:transparent}
-.choice-num{font-family:'Cinzel',serif;font-size:.78rem;color:var(--gold-dim);width:18px;flex-shrink:0}
-.choice-btn:hover,.choice-btn:active{border-color:var(--gold-dim);background:rgba(200,168,75,.07);color:#fff}
+.story-header{
+  background:var(--win);
+  border-bottom:2px solid var(--border-gold);
+  padding:10px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;
+}
+.chapter-lbl{
+  font-family:'DotGothic16',monospace;font-size:.85rem;
+  color:var(--gold);letter-spacing:2px;
+}
+.loc-lbl{font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--silver);letter-spacing:1px}
+.story-scroll{flex:1;overflow-y:auto;padding:24px 28px;background:var(--bg)}
+.story-scroll::-webkit-scrollbar{width:5px}
+.story-scroll::-webkit-scrollbar-thumb{background:var(--border-gold);border-radius:2px}
+.story-entry{margin-bottom:24px;animation:entryIn .3s ease forwards}
+@keyframes entryIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* DQ-style dialog text */
+.stext{
+  font-size:1rem;line-height:2;color:var(--white);white-space:pre-wrap;
+}
+.stext.narration{
+  color:var(--silver);
+  padding:12px 18px;
+  background:var(--win);
+  border:2px solid var(--border);
+  border-radius:2px;
+  border-left:3px solid var(--border-gold);
+}
+.stext.player-action{
+  font-family:'DotGothic16',monospace;
+  color:var(--gold);font-size:.92rem;letter-spacing:1px;
+}
+.stext.player-action::before{content:'▶ '}
+.stext.reward{
+  color:var(--gold);padding:12px 18px;
+  border:2px solid var(--border-gold);
+  border-radius:2px;
+  background:rgba(240,192,64,.06);
+  font-family:'DotGothic16',monospace;font-size:.88rem;letter-spacing:1px;
+}
+.stext.system{
+  font-family:'DotGothic16',monospace;
+  color:var(--text-dim);font-size:.8rem;letter-spacing:1px;
+}
+.choices-area{
+  border-top:2px solid var(--border-gold);padding:14px 18px;
+  background:var(--win);flex-shrink:0;
+}
+.timer-bar-wrap{margin-bottom:10px}
+.timer-bar{height:4px;background:var(--gold);border-radius:2px;transition:width linear}
+.timer-txt{font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--text-dim);text-align:right;margin-top:3px;letter-spacing:1px}
+
+/* DQ command window style choices */
+.choice-btn{
+  display:flex;align-items:center;gap:12px;width:100%;
+  background:var(--bg3);
+  border:2px solid var(--border);
+  border-radius:2px;
+  color:var(--white);
+  font-family:'Noto Serif TC',serif;
+  font-size:1rem;
+  padding:11px 16px;text-align:left;cursor:pointer;
+  transition:all .12s;
+  margin-bottom:6px;min-height:48px;
+  -webkit-tap-highlight-color:transparent;
+}
+.choice-num{
+  font-family:'DotGothic16',monospace;
+  font-size:.8rem;color:var(--gold);width:20px;flex-shrink:0;
+}
+.choice-btn:hover,.choice-btn:active{
+  border-color:var(--border-gold-hi);
+  background:var(--bg4);
+  color:var(--gold);
+  box-shadow:inset 2px 0 0 var(--gold);
+}
+.choice-btn:hover .choice-num::after{content:' ▶'}
 .choice-btn:disabled{opacity:.35;cursor:not-allowed}
 
 /* Right panel */
-.right-panel{width:200px;min-width:180px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;padding:14px;flex-shrink:0}
-.right-panel::-webkit-scrollbar{width:3px}.right-panel::-webkit-scrollbar-thumb{background:var(--border-hi)}
-.mini-map{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:12px}
-.map-cell{aspect-ratio:1;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.65rem;transition:all .3s}
-.map-cell.visited{background:rgba(200,168,75,.08);border-color:var(--gold-dim)}
-.map-cell.current{background:rgba(200,168,75,.2);border-color:var(--gold);animation:cellPulse 1.5s infinite}
-.map-cell.enemy{border-color:var(--red);background:rgba(192,57,43,.12)}
-@keyframes cellPulse{50%{box-shadow:0 0 8px var(--gold-glow)}}
-.quest-item{padding:6px 10px;margin-bottom:5px;background:var(--bg3);border-left:2px solid var(--gold-dim);font-size:.85rem;color:var(--text-dim);line-height:1.5}
+.right-panel{
+  width:200px;min-width:180px;
+  background:var(--win);
+  border-left:3px solid var(--border-gold);
+  display:flex;flex-direction:column;overflow-y:auto;padding:12px;flex-shrink:0;
+}
+.right-panel::-webkit-scrollbar{width:4px}
+.right-panel::-webkit-scrollbar-thumb{background:var(--border-gold);border-radius:2px}
+
+.mini-map{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-bottom:12px}
+.map-cell{
+  aspect-ratio:1;
+  background:rgba(10,14,26,.8);
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:.6rem;
+  transition:all .3s;border-radius:1px;
+}
+.map-cell.visited{background:rgba(40,64,100,.5);border-color:var(--border-hi)}
+.map-cell.current{background:rgba(240,192,64,.15);border-color:var(--gold);animation:cellPulse 1.5s infinite}
+.map-cell.enemy{border-color:var(--red);background:rgba(192,40,32,.15)}
+@keyframes cellPulse{50%{box-shadow:0 0 6px var(--gold-glow)}}
+
+.quest-item{
+  padding:6px 10px;margin-bottom:5px;
+  background:var(--bg3);
+  border-left:2px solid var(--border-gold);
+  border-radius:0 2px 2px 0;
+  font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--silver);line-height:1.6;letter-spacing:.5px;
+}
 .quest-item.done{border-color:var(--green);color:var(--green);text-decoration:line-through;opacity:.6}
-.party-slot{background:var(--bg3);border:1px dashed var(--border);padding:8px;text-align:center;font-size:.82rem;color:var(--text-dim);font-style:italic;margin-bottom:5px}
-.party-slot.filled{border-style:solid;border-color:var(--border-hi)}
-.chat-area{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;max-height:130px;overflow-y:auto}
-.chat-msg{font-size:.85rem;line-height:1.5;padding:4px 0;border-bottom:1px solid var(--border)}
-.chat-from{color:var(--gold-dim)}.chat-txt{color:var(--text-dim)}
+
+.party-slot{
+  background:var(--bg3);border:1px dashed var(--border);
+  border-radius:2px;
+  padding:7px;text-align:center;font-family:'DotGothic16',monospace;
+  font-size:.75rem;color:var(--text-dim);margin-bottom:5px;letter-spacing:1px;
+}
+.party-slot.filled{border-style:solid;border-color:var(--border-gold)}
+
+.chat-area{display:flex;flex-direction:column;gap:3px;margin-bottom:8px;max-height:120px;overflow-y:auto}
+.chat-msg{font-size:.8rem;line-height:1.5;padding:3px 0;border-bottom:1px solid var(--border)}
+.chat-from{font-family:'DotGothic16',monospace;color:var(--gold);font-size:.72rem}
+.chat-txt{color:var(--silver)}
 .chat-inp-row{display:flex;gap:4px}
-.chat-inp{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Crimson Pro',serif;font-size:.9rem;padding:7px 10px;outline:none;min-height:38px}
-.chat-send{background:transparent;border:1px solid var(--border-hi);color:var(--gold-dim);font-size:.78rem;padding:7px 10px;cursor:pointer;font-family:'Cinzel',serif;transition:all .15s}
-.chat-send:hover{border-color:var(--gold);color:var(--gold)}
+.chat-inp{
+  flex:1;background:var(--bg3);border:1px solid var(--border);
+  color:var(--white);font-family:'Noto Serif TC',serif;
+  font-size:.88rem;padding:7px 10px;outline:none;min-height:38px;border-radius:2px;
+}
+.chat-inp:focus{border-color:var(--border-gold)}
+.chat-send{
+  background:var(--bg3);border:2px solid var(--border-gold);
+  color:var(--gold);font-family:'DotGothic16',monospace;font-size:.72rem;
+  padding:7px 10px;cursor:pointer;border-radius:2px;
+  transition:all .12s;letter-spacing:1px;
+}
+.chat-send:hover{background:var(--bg4);box-shadow:0 0 6px var(--gold-glow)}
 
 /* ══ MOBILE GAME LAYOUT ══ */
 .mob-tabs{display:none}
@@ -183,169 +619,300 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 @media(max-width:700px){
   #s-game{flex-direction:column;height:100dvh;overflow:hidden;position:relative}
-
-  /* Hide desktop panels on mobile */
-  .sidebar{display:none !important}
-  .right-panel{display:none !important}
-
-  /* Story takes full height minus tab bar */
+  .sidebar{display:none !important}.right-panel{display:none !important}
   .story-area{flex:1;min-height:0;overflow:hidden}
-  .story-scroll{padding:16px}
+  .story-scroll{padding:14px}
   .choices-area{padding:10px 14px}
-  .choice-btn{font-size:1rem;padding:13px 14px;min-height:52px}
-  .stext{font-size:1rem;line-height:1.85}
-  .chapter-lbl{font-size:.88rem}
-  .loc-lbl{font-size:.78rem}
+  .choice-btn{font-size:.95rem;padding:12px 14px;min-height:50px}
+  .stext{font-size:.95rem;line-height:1.9}
+  .chapter-lbl{font-size:.78rem}.loc-lbl{font-size:.7rem}
 
-  /* Mobile tab bar at bottom */
   .mob-tabs{
-    display:flex;
-    height:var(--tab-h);
-    background:var(--bg2);
-    border-top:1px solid var(--border);
-    flex-shrink:0;
-    z-index:100;
+    display:flex;height:var(--tab-h);
+    background:var(--win);
+    border-top:2px solid var(--border-gold);
+    flex-shrink:0;z-index:100;
   }
   .mob-tab{
     flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:3px;background:transparent;border:none;color:var(--text-dim);
-    font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:1px;
-    cursor:pointer;transition:all .2s;padding:8px 4px;
+    font-family:'DotGothic16',monospace;font-size:.6rem;letter-spacing:1px;
+    cursor:pointer;transition:all .15s;padding:8px 4px;
     -webkit-tap-highlight-color:transparent;
   }
   .mob-tab .tab-icon{font-size:1.4rem;line-height:1}
   .mob-tab.active{color:var(--gold)}
-  .mob-tab.active .tab-icon{filter:drop-shadow(0 0 6px rgba(200,168,75,.6))}
+  .mob-tab.active .tab-icon{filter:drop-shadow(0 0 6px rgba(240,192,64,.6))}
 
-  /* Mobile panel overlays */
   .mob-panel{
     position:fixed;inset:0;bottom:var(--tab-h);
-    background:var(--bg2);z-index:50;overflow-y:auto;padding:16px;
+    background:var(--bg);z-index:50;overflow-y:auto;padding:14px;
     animation:panelUp .2s ease;
   }
   .mob-panel.open{display:block}
   @keyframes panelUp{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
   .mob-panel-close{
-    width:100%;background:transparent;border:1px solid var(--border-hi);
-    color:var(--text-dim);font-family:'Cinzel',serif;font-size:.82rem;
-    padding:11px;cursor:pointer;margin-bottom:16px;letter-spacing:2px;min-height:44px;
+    width:100%;background:var(--bg3);
+    border:2px solid var(--border-gold);border-radius:2px;
+    color:var(--gold);font-family:'DotGothic16',monospace;
+    font-size:.82rem;letter-spacing:2px;
+    padding:11px;cursor:pointer;margin-bottom:14px;
+    min-height:44px;transition:all .12s;
   }
-  .mob-panel-close:active{background:var(--bg3)}
-
-  /* Mobile stat grid */
-  .mob-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
-  .mob-stat-cell{background:var(--bg3);border:1px solid var(--border);padding:10px 8px;text-align:center}
-  .mob-stat-cell .sk{font-size:.72rem;color:var(--text-dim);display:block;margin-bottom:3px}
-  .mob-stat-cell .sv{font-family:'Cinzel',serif;font-size:1.1rem;color:var(--silver)}
+  .mob-panel-close:active{background:var(--bg4)}
+  .mob-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+  .mob-stat-cell{
+    background:var(--bg3);border:1px solid var(--border-gold);
+    border-radius:2px;padding:9px 8px;text-align:center;
+  }
+  .mob-stat-cell .sk{font-family:'DotGothic16',monospace;font-size:.68rem;color:var(--gold);display:block;margin-bottom:3px;letter-spacing:1px}
+  .mob-stat-cell .sv{font-family:'DotGothic16',monospace;font-size:1rem;color:var(--white)}
 }
 
 /* ═══════════ INVENTORY / BAG ═══════════ */
-#s-bag{background:radial-gradient(ellipse at 50% 0%,#0a1020,var(--bg) 60%);justify-content:flex-start;padding-top:28px}
+#s-bag{background:var(--bg);justify-content:flex-start;padding-top:24px}
 .bag-wrap{width:100%;max-width:700px}
-.bag-tabs{display:flex;gap:0;margin-bottom:16px}
-.bag-tab{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text-dim);font-family:'Cinzel',serif;font-size:.8rem;letter-spacing:2px;padding:10px;cursor:pointer;transition:all .2s;min-height:44px}
-.bag-tab.active{background:var(--bg2);border-color:var(--gold-dim);color:var(--gold)}
-.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px}
-.inv-item{background:var(--bg2);border:1px solid var(--border);padding:12px;cursor:pointer;transition:all .2s;position:relative;-webkit-tap-highlight-color:transparent}
-.inv-item:hover,.inv-item:active{border-color:var(--gold-dim)}
+.bag-tabs{display:flex;gap:6px;margin-bottom:16px}
+.bag-tab{
+  flex:1;background:var(--bg3);border:2px solid var(--border);
+  border-radius:2px;
+  color:var(--text-dim);font-family:'DotGothic16',monospace;
+  font-size:.8rem;letter-spacing:2px;padding:10px;cursor:pointer;transition:all .12s;min-height:44px;
+}
+.bag-tab.active{
+  background:var(--bg4);border-color:var(--border-gold-hi);color:var(--gold);
+  box-shadow:0 0 8px var(--gold-glow);
+}
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:16px}
+.inv-item{
+  background:var(--win);border:2px solid var(--border);
+  border-radius:2px;padding:12px;cursor:pointer;
+  transition:all .12s;
+  position:relative;-webkit-tap-highlight-color:transparent;
+  text-align:center;
+}
+.inv-item:hover,.inv-item:active{border-color:var(--border-gold);background:var(--bg3);box-shadow:0 0 8px var(--gold-glow)}
 .inv-item-icon{font-size:1.8rem;display:block;margin-bottom:6px}
-.inv-item-name{font-family:'Cinzel',serif;font-size:.82rem;display:block;margin-bottom:3px}
-.inv-item-type{font-size:.75rem;color:var(--text-dim)}
-.inv-item-qty{position:absolute;top:6px;right:8px;font-family:'Cinzel',serif;font-size:.75rem;color:var(--gold-dim)}
-.inv-empty{color:var(--text-dim);font-style:italic;font-size:.95rem;padding:20px 0;text-align:center}
-.equip-panel{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.inv-item-name{
+  font-family:'DotGothic16',monospace;font-size:.75rem;
+  display:block;margin-bottom:3px;color:var(--white);letter-spacing:.5px;
+}
+.inv-item-type{font-family:'DotGothic16',monospace;font-size:.7rem;color:var(--text-dim)}
+.inv-item-qty{
+  position:absolute;top:5px;right:7px;
+  font-family:'DotGothic16',monospace;font-size:.7rem;
+  color:var(--gold);
+}
+.inv-empty{
+  font-family:'DotGothic16',monospace;
+  color:var(--text-dim);font-size:.88rem;padding:30px 0;text-align:center;letter-spacing:2px;
+}
+.equip-panel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
 @media(min-width:500px){.equip-panel{grid-template-columns:repeat(3,1fr)}}
-.equip-card{background:var(--bg2);border:1px solid var(--border);padding:14px;text-align:center}
-.equip-card-slot{font-family:'Cinzel',serif;font-size:.68rem;color:var(--text-dim);letter-spacing:2px;display:block;margin-bottom:8px}
+.equip-card{
+  background:var(--win);border:2px solid var(--border);
+  border-radius:2px;padding:12px;text-align:center;
+}
+.equip-card-slot{font-family:'DotGothic16',monospace;font-size:.68rem;color:var(--text-dim);letter-spacing:2px;display:block;margin-bottom:8px}
 .equip-card-icon{font-size:2rem;display:block;margin-bottom:5px}
-.equip-card-name{font-size:.88rem;display:block;margin-bottom:3px}
-.equip-card-stats{font-size:.75rem;color:var(--text-dim)}
+.equip-card-name{font-family:'DotGothic16',monospace;font-size:.78rem;display:block;margin-bottom:3px}
+.equip-card-stats{font-family:'DotGothic16',monospace;font-size:.7rem;color:var(--text-dim)}
+
 /* Item detail modal */
-.item-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;padding:20px}
+.item-modal-bg{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.85);
+  z-index:200;align-items:center;justify-content:center;padding:20px;
+}
 .item-modal-bg.open{display:flex}
-.item-modal{background:var(--bg2);border:1px solid var(--gold-dim);padding:24px;max-width:340px;width:100%;animation:panelUp .2s ease}
-.item-modal-icon{font-size:3rem;display:block;text-align:center;margin-bottom:10px}
-.item-modal-name{font-family:'Cinzel',serif;font-size:1.1rem;text-align:center;margin-bottom:4px}
-.item-modal-type{font-size:.8rem;color:var(--text-dim);text-align:center;letter-spacing:2px;margin-bottom:14px}
-.item-modal-stats{background:var(--bg3);border:1px solid var(--border);padding:10px 14px;margin-bottom:16px;font-size:.9rem;color:var(--silver);line-height:1.8}
+.item-modal{
+  background:var(--win);
+  border:var(--win-border);
+  border-radius:3px;padding:28px;max-width:340px;width:100%;
+  animation:notifIn .2s ease;
+  box-shadow:var(--win-shadow);
+  position:relative;
+}
+.item-modal::before,.item-modal::after{content:'◆';position:absolute;color:var(--gold);font-size:.75rem}
+.item-modal::before{top:-9px;left:-9px}
+.item-modal::after{bottom:-9px;right:-9px}
+.item-modal-icon{font-size:3.2rem;display:block;text-align:center;margin-bottom:10px}
+.item-modal-name{
+  font-family:'DotGothic16',monospace;font-size:1.05rem;
+  text-align:center;margin-bottom:4px;color:var(--gold);letter-spacing:2px;
+}
+.item-modal-type{font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--text-dim);text-align:center;margin-bottom:14px;letter-spacing:2px}
+.item-modal-stats{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:2px;padding:12px;margin-bottom:16px;
+  font-family:'DotGothic16',monospace;font-size:.82rem;color:var(--white);line-height:1.9;letter-spacing:1px;
+}
 .item-modal-btns{display:flex;gap:8px}
-.gold-display{font-family:'Cinzel',serif;font-size:.95rem;color:var(--gold);text-align:right;margin-bottom:12px}
-/* Desktop sidebar inventory button */
-.sidebar .btn-bag{background:var(--bg3);border-color:var(--border-hi);color:var(--silver)}
-.sidebar .btn-bag:hover{border-color:var(--gold-dim);color:var(--gold)}
+.gold-display{
+  font-family:'DotGothic16',monospace;font-size:.88rem;
+  color:var(--gold);text-align:right;margin-bottom:12px;letter-spacing:2px;
+}
+.sidebar .btn-bag{
+  background:var(--bg3);border-color:var(--border);color:var(--silver);
+  box-shadow:none;
+}
+.sidebar .btn-bag:hover{border-color:var(--border-gold);color:var(--gold)}
 
 /* ═══════════ COMBAT ═══════════ */
-#s-combat{background:radial-gradient(ellipse at 50% 50%,#1a0a0a,var(--bg) 70%);align-items:center;justify-content:flex-start;padding:16px;overflow-y:auto}
-.combat-wrap{width:100%;max-width:720px;padding-bottom:20px}
-.combat-hdr{font-family:'Cinzel',serif;text-align:center;margin-bottom:16px}
-.combat-title{font-size:1.1rem;color:var(--red);letter-spacing:6px;margin-bottom:3px}
-.combat-sub-lbl{font-size:.82rem;color:var(--text-dim);letter-spacing:3px}
-.combatants{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:14px}
-.fighter{background:var(--bg2);border:1px solid var(--border);padding:14px;text-align:center}
-.fighter-icon{font-size:3rem;display:block;margin-bottom:6px}
+#s-combat{
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 40%,rgba(30,10,10,.8) 0%,transparent 70%),
+    var(--bg);
+  align-items:center;justify-content:flex-start;padding:16px;overflow-y:auto;
+}
+.combat-wrap{width:100%;max-width:720px;padding-bottom:24px}
+.combat-hdr{text-align:center;margin-bottom:16px}
+.combat-title{
+  font-family:'DotGothic16',monospace;
+  font-size:1.1rem;color:var(--red);letter-spacing:8px;
+  margin-bottom:4px;
+  text-shadow:0 0 20px rgba(240,56,48,.5);
+  animation:combatFlash 1.5s ease-in-out infinite;
+}
+@keyframes combatFlash{0%,100%{text-shadow:0 0 20px rgba(240,56,48,.5)}50%{text-shadow:0 0 40px rgba(240,56,48,.9),0 0 80px rgba(240,56,48,.3)}}
+.combat-sub-lbl{font-family:'DotGothic16',monospace;font-size:.8rem;color:var(--text-dim);letter-spacing:3px}
+.combatants{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:16px}
+.fighter{
+  background:var(--win);border:2px solid var(--border-gold);
+  border-radius:3px;padding:14px;text-align:center;
+  box-shadow:var(--win-shadow);
+  position:relative;
+}
+.fighter::before,.fighter::after{content:'◆';position:absolute;color:var(--gold-dim);font-size:.55rem}
+.fighter::before{top:-7px;left:-7px}
+.fighter::after{bottom:-7px;right:-7px}
+.fighter-icon{font-size:3rem;display:block;margin-bottom:8px}
 .fighter-icon.shake{animation:shake .4s ease}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-.fighter-name{font-family:'Cinzel',serif;font-size:1rem;color:var(--gold);margin-bottom:3px}
-.fighter-job{font-size:.8rem;color:var(--text-dim);margin-bottom:10px;letter-spacing:2px}
-.vs-txt{font-family:'Cinzel',serif;font-size:1.8rem;font-weight:900;color:var(--red);text-shadow:0 0 20px var(--red-glow)}
-.combat-log-box{background:var(--bg2);border:1px solid var(--border);height:100px;overflow-y:auto;padding:10px;margin-bottom:12px}
-.combat-log-box::-webkit-scrollbar{width:3px}.combat-log-box::-webkit-scrollbar-thumb{background:var(--border-hi)}
-.clog{font-size:.92rem;margin-bottom:6px;padding-left:10px;border-left:2px solid;line-height:1.5}
-.clog-player{border-color:var(--gold);color:#e8d5b7}
-.clog-enemy{border-color:var(--red);color:#ffbbbb}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.fighter-name{font-family:'DotGothic16',monospace;font-size:.9rem;color:var(--gold);margin-bottom:2px;letter-spacing:2px}
+.fighter-job{font-family:'DotGothic16',monospace;font-size:.72rem;color:var(--text-dim);margin-bottom:10px;letter-spacing:2px}
+.vs-txt{
+  font-family:'DotGothic16',monospace;
+  font-size:1.8rem;color:var(--red);
+  text-shadow:0 0 20px rgba(240,56,48,.6);
+  animation:vsPulse 1s ease-in-out infinite;
+  letter-spacing:2px;
+}
+@keyframes vsPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+.combat-log-box{
+  background:var(--win);border:2px solid var(--border);
+  border-radius:2px;height:110px;overflow-y:auto;
+  padding:10px 14px;margin-bottom:14px;
+}
+.combat-log-box::-webkit-scrollbar{width:4px}
+.combat-log-box::-webkit-scrollbar-thumb{background:var(--border-gold);border-radius:2px}
+.clog{font-family:'DotGothic16',monospace;font-size:.8rem;margin-bottom:6px;padding-left:10px;border-left:2px solid;line-height:1.6;letter-spacing:.5px}
+.clog-player{border-color:var(--gold);color:var(--white)}
+.clog-enemy{border-color:var(--red);color:#f08080}
 .clog-system{border-color:var(--border-hi);color:var(--text-dim);font-style:italic}
-/* Combat skill buttons — big enough to tap */
+
 .combat-skills{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
 @media(min-width:500px){.combat-skills{grid-template-columns:repeat(4,1fr)}}
-.sk-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Crimson Pro',serif;font-size:.95rem;padding:12px 8px;cursor:pointer;transition:all .15s;text-align:center;min-height:72px;-webkit-tap-highlight-color:transparent}
-.sk-btn .sn{display:block;color:var(--silver);margin-bottom:4px;font-size:1rem}
-.sk-btn .sc{font-size:.78rem;color:var(--blue)}
-.sk-btn .sd{font-size:.78rem;color:var(--red)}
-.sk-btn:hover:not(:disabled),.sk-btn:active:not(:disabled){border-color:var(--gold-dim);background:rgba(200,168,75,.08)}
-.sk-btn:disabled{opacity:.38;cursor:not-allowed}
-.sk-btn.my-turn{border-color:var(--gold-dim);box-shadow:0 0 10px var(--gold-glow)}
-.turn-indicator{text-align:center;font-family:'Cinzel',serif;font-size:.88rem;letter-spacing:3px;margin-bottom:8px;padding:8px;border:1px solid var(--border)}
-.turn-indicator.my{color:var(--gold);border-color:var(--gold-dim);background:var(--gold-glow)}
-.turn-indicator.wait{color:var(--text-dim)}
-.turn-timer{height:4px;background:var(--gold);margin-bottom:10px;transition:width linear}
-.flee-btn{width:100%;background:transparent;border:1px solid var(--red);color:var(--red);font-family:'Cinzel',serif;font-size:.9rem;letter-spacing:4px;padding:12px;cursor:pointer;transition:all .15s;min-height:48px}
-.flee-btn:hover,.flee-btn:active{background:rgba(224,80,80,.1)}
+.sk-btn{
+  background:var(--bg3);border:2px solid var(--border);
+  border-radius:2px;
+  color:var(--white);font-family:'DotGothic16',monospace;
+  font-size:.8rem;padding:11px 8px;cursor:pointer;
+  transition:all .12s;text-align:center;min-height:72px;
+  -webkit-tap-highlight-color:transparent;letter-spacing:.5px;
+}
+.sk-btn .sn{display:block;color:var(--gold);margin-bottom:4px;font-size:.85rem}
+.sk-btn .sc{font-size:.72rem;color:var(--sky)}
+.sk-btn .sd{font-size:.72rem;color:var(--red)}
+.sk-btn:hover:not(:disabled),.sk-btn:active:not(:disabled){
+  border-color:var(--border-gold-hi);
+  background:var(--bg4);
+  box-shadow:0 0 8px var(--gold-glow);
+}
+.sk-btn:disabled{opacity:.35;cursor:not-allowed}
+.sk-btn.my-turn{border-color:var(--border-gold-hi);box-shadow:0 0 10px var(--gold-glow)}
 
-/* Party HP bars in combat */
+.turn-indicator{
+  font-family:'DotGothic16',monospace;
+  text-align:center;font-size:.85rem;letter-spacing:3px;margin-bottom:10px;padding:9px;
+  border:2px solid var(--border);border-radius:2px;
+}
+.turn-indicator.my{
+  color:var(--gold);border-color:var(--border-gold-hi);
+  background:rgba(240,192,64,.06);
+  box-shadow:0 0 10px var(--gold-glow);
+  animation:myTurnPulse 1s ease-in-out infinite;
+}
+@keyframes myTurnPulse{0%,100%{box-shadow:0 0 10px var(--gold-glow)}50%{box-shadow:0 0 20px var(--gold-glow),inset 0 0 10px rgba(240,192,64,.05)}}
+.turn-indicator.wait{color:var(--text-dim)}
+.turn-timer{height:4px;background:linear-gradient(90deg,var(--gold-dim),var(--gold));border-radius:2px;margin-bottom:10px;transition:width linear}
+.flee-btn{
+  width:100%;background:var(--bg3);
+  border:2px solid #803020;color:var(--red);
+  border-radius:2px;
+  font-family:'DotGothic16',monospace;font-size:.88rem;
+  letter-spacing:4px;padding:11px;cursor:pointer;transition:all .12s;min-height:46px;
+}
+.flee-btn:hover,.flee-btn:active{border-color:var(--red);background:rgba(192,40,32,.1)}
+
 .party-hps{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:12px}
-.party-hp-card{background:var(--bg2);border:1px solid var(--border);padding:8px 10px}
-.phc-name{font-family:'Cinzel',serif;font-size:.8rem;color:var(--gold-dim);margin-bottom:4px}
+.party-hp-card{
+  background:var(--win);border:2px solid var(--border);
+  border-radius:2px;padding:7px 10px;
+}
+.phc-name{font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--gold-dim);margin-bottom:4px;letter-spacing:1px}
 .phc-name.active-turn{color:var(--gold)}
 
 /* ═══════════ SKILL TREE ═══════════ */
-#s-skills{background:radial-gradient(ellipse at 50% 0%,#0e0a1e,var(--bg) 60%);justify-content:flex-start;padding-top:28px}
+#s-skills{background:var(--bg);justify-content:flex-start;padding-top:24px}
 .skill-tree{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:680px;width:100%;margin:16px auto}
 @media(max-width:500px){.skill-tree{grid-template-columns:repeat(2,1fr)}}
-.tree-node{background:var(--bg2);border:1px solid var(--border);padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s;position:relative;-webkit-tap-highlight-color:transparent}
-.tree-node.locked{opacity:.38;cursor:not-allowed}
+.tree-node{
+  background:var(--win);border:2px solid var(--border);
+  border-radius:2px;padding:14px 12px;text-align:center;cursor:pointer;
+  transition:all .12s;
+  position:relative;-webkit-tap-highlight-color:transparent;
+}
+.tree-node.locked{opacity:.35;cursor:not-allowed;filter:grayscale(.8)}
 .tree-node.unlocked{border-color:var(--border-hi)}
-.tree-node.mastered{border-color:var(--gold);background:var(--gold-glow)}
-.tree-node:hover:not(.locked),.tree-node:active:not(.locked){border-color:var(--gold-dim)}
+.tree-node.mastered{border-color:var(--border-gold-hi);background:var(--bg3);box-shadow:0 0 10px var(--gold-glow)}
+.tree-node:hover:not(.locked){border-color:var(--border-gold);background:var(--bg3);box-shadow:0 0 8px var(--gold-glow)}
 .tn-icon{font-size:1.8rem;display:block;margin-bottom:6px}
-.tn-name{font-family:'Cinzel',serif;font-size:.85rem;color:var(--gold);letter-spacing:1px;display:block;margin-bottom:4px}
-.tn-desc{font-size:.82rem;color:var(--text-dim);line-height:1.4}
-.tn-cost{font-size:.78rem;color:var(--purple);margin-top:6px}
-.tn-badge{position:absolute;top:6px;right:6px;background:var(--gold);color:var(--bg);font-size:.65rem;font-family:'Cinzel',serif;width:18px;height:18px;display:flex;align-items:center;justify-content:center}
-.sp-display{font-family:'Cinzel',serif;color:var(--purple);font-size:1.1rem}
+.tn-name{font-family:'DotGothic16',monospace;font-size:.8rem;color:var(--gold);display:block;margin-bottom:4px;letter-spacing:1px}
+.tn-desc{font-family:'DotGothic16',monospace;font-size:.72rem;color:var(--silver);line-height:1.5;letter-spacing:.5px}
+.tn-cost{font-family:'DotGothic16',monospace;font-size:.72rem;color:var(--sky);margin-top:6px}
+.tn-badge{
+  position:absolute;top:-8px;right:-8px;
+  background:var(--gold2);color:var(--bg);
+  font-family:'DotGothic16',monospace;font-size:.6rem;
+  width:20px;height:20px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;border:1px solid var(--gold);
+}
+.sp-display{font-family:'DotGothic16',monospace;color:var(--sky);font-size:1rem;letter-spacing:2px}
 
 /* ═══════════ DUNGEON LOBBY ═══════════ */
-#s-lobby{background:radial-gradient(ellipse at 50% 0%,#0a0f1a,var(--bg) 60%);justify-content:flex-start;padding-top:28px}
+#s-lobby{background:var(--bg);justify-content:flex-start;padding-top:24px}
 .lobby-wrap{width:100%;max-width:640px}
-.room-card{background:var(--bg2);border:1px solid var(--border);padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;transition:all .2s}
-.room-card:hover{border-color:var(--border-hi)}
-.room-code{font-family:'Cinzel',serif;font-size:1.2rem;color:var(--gold);letter-spacing:4px}
-.room-info{font-size:.88rem;color:var(--text-dim)}
-.member-row{display:flex;align-items:center;gap:12px;padding:10px;margin-bottom:5px;background:var(--bg3);border:1px solid var(--border)}
-.member-icon{font-size:1.6rem}
-.member-name{font-family:'Cinzel',serif;font-size:.95rem;color:var(--gold)}
-.member-job{font-size:.82rem;color:var(--text-dim)}
-.member-ready{font-size:.82rem;color:var(--green);margin-left:auto}
-.member-notready{font-size:.82rem;color:var(--red);margin-left:auto}
+.room-card{
+  background:var(--win);border:2px solid var(--border);
+  border-radius:2px;padding:14px;margin-bottom:8px;
+  display:flex;justify-content:space-between;align-items:center;
+  transition:all .12s;
+}
+.room-card:hover{border-color:var(--border-gold);box-shadow:0 0 8px var(--gold-glow)}
+.room-code{font-family:'DotGothic16',monospace;font-size:1.05rem;color:var(--gold);letter-spacing:4px}
+.room-info{font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--silver);letter-spacing:.5px}
+.member-row{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;margin-bottom:5px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:2px;
+}
+.member-icon{font-size:1.5rem}
+.member-name{font-family:'DotGothic16',monospace;font-size:.85rem;color:var(--gold);letter-spacing:1px}
+.member-job{font-family:'DotGothic16',monospace;font-size:.72rem;color:var(--silver)}
+.member-ready{font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--green);margin-left:auto;letter-spacing:1px}
+.member-notready{font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--text-dim);margin-left:auto;letter-spacing:1px}
 
 .hide{display:none!important}
 .center{text-align:center}
@@ -359,18 +926,28 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 <!-- ══ TITLE ══ -->
 <div id="s-title" class="screen active">
-  <div style="text-align:center">
-    <div class="title-ornament">✦  ✦  ✦</div>
-    <h1 class="title-xl">ABYSS<br>CHRONICLE</h1>
-    <div class="subtitle" style="margin-top:10px">深 淵 編 年 史</div>
-    <div class="title-lore-box">
-      <p class="lore">黑暗之神的封印已被打破。古老的惡魔軍團從深淵之門湧出，吞噬了無數王國的光明。唯有被命運選中的勇者，方能執劍踏入黑暗，尋找最後的希望。</p>
+  <div style="text-align:center;max-width:540px">
+
+    <div class="title-ornament">◆  ◆  ◆  ◆  ◆</div>
+
+    <h1 class="title-xl">勇者傳說</h1>
+    <div class="title-xl" style="font-size:clamp(1.2rem,4vw,2rem);margin-top:4px;animation-delay:.3s">魔王討伐之旅</div>
+    <div class="subtitle" style="margin-top:12px">勇者傳說</div>
+
+    <div class="title-lore-box" style="margin:28px auto">
+      <p class="lore">遠古的預言中記載著——當魔王再度降臨，世界將陷入無盡黑暗。\n\n命運之輪開始轉動，勇者的血脈在你體內覺醒。拿起你的武器，踏上傳說中的征途吧。</p>
     </div>
+
     <div class="title-btns">
-      <button class="btn" onclick="goScreen('auth')">開始冒險</button>
+      <button class="btn" style="min-width:200px" onclick="goScreen('auth')">從頭開始</button>
+      <button class="btn btn-ghost" style="min-width:200px" onclick="goScreen('auth')">繼續冒險</button>
     </div>
-    <div style="margin-top:20px;font-size:.72rem;color:var(--text-dim);letter-spacing:3px">
-      NODE.JS · SOCKET.IO · MARIADB
+
+    <div style="margin-top:32px">
+      <div class="title-press">── 按任意鍵開始 ──</div>
+      <div style="margin-top:10px;font-family:'DotGothic16',monospace;font-size:.7rem;color:var(--text-dim);letter-spacing:3px">
+        多人連線  ·  NODE.JS  ·  SOCKET.IO
+      </div>
     </div>
   </div>
 </div>
@@ -378,37 +955,37 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <!-- ══ AUTH ══ -->
 <div id="s-auth" class="screen">
   <div class="auth-box">
-    <div class="title-sm center" style="margin-bottom:6px">進入深淵</div>
-    <div class="divider">✦ AUTHENTICATION ✦</div>
+    <div class="title-sm center" style="margin-bottom:6px;letter-spacing:6px">冒險者登記</div>
+    <div class="divider">冒險者公會</div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">登入</button>
-      <button class="auth-tab" id="tab-reg" onclick="switchAuthTab('reg')">註冊</button>
+      <button class="auth-tab" id="tab-reg" onclick="switchAuthTab('reg')">新增帳號</button>
     </div>
     <div id="auth-login">
-      <div class="inp-group"><label class="inp-label">用戶名</label><input class="inp" id="l-user" placeholder="你的用戶名"></div>
+      <div class="inp-group"><label class="inp-label">用戶名</label><input class="inp" id="l-user" placeholder="輸入冒險者名稱"></div>
       <div class="inp-group"><label class="inp-label">密碼</label><input class="inp" id="l-pass" type="password" placeholder="••••••••"></div>
-      <button class="btn btn-full" onclick="doLogin()">登入</button>
+      <button class="btn btn-full" onclick="doLogin()">踏上征途</button>
     </div>
     <div id="auth-reg" class="hide">
-      <div class="inp-group"><label class="inp-label">用戶名</label><input class="inp" id="r-user" placeholder="2-30個字符"></div>
+      <div class="inp-group"><label class="inp-label">用戶名</label><input class="inp" id="r-user" placeholder="2至30個字符"></div>
       <div class="inp-group"><label class="inp-label">電郵</label><input class="inp" id="r-email" placeholder="your@email.com"></div>
       <div class="inp-group"><label class="inp-label">密碼</label><input class="inp" id="r-pass" type="password" placeholder="至少6位"></div>
-      <button class="btn btn-full" onclick="doRegister()">創建帳號</button>
+      <button class="btn btn-full" onclick="doRegister()">成為冒險者</button>
     </div>
     <div class="mt12 center">
-      <button class="btn btn-sm btn-red" onclick="goScreen('title')">返回</button>
+      <button class="btn btn-sm btn-ghost" onclick="goScreen('title')">返回</button>
     </div>
   </div>
 </div>
 
 <!-- ══ CHAR SELECT ══ -->
 <div id="s-chars" class="screen">
-  <div style="width:100%;max-width:660px">
-    <div class="title-sm center" style="margin-bottom:4px">選擇你的英雄</div>
-    <div class="divider">✦ CHARACTER SELECT ✦</div>
+  <div style="width:100%;max-width:700px">
+    <div class="title-sm center" style="margin-bottom:6px;letter-spacing:6px">選擇冒險者</div>
+    <div class="divider">選擇你的英雄出發吧！</div>
     <div class="char-cards" id="char-cards"></div>
     <div class="center">
-      <button class="btn btn-sm btn-red" onclick="logoutAndTitle()">登出</button>
+      <button class="btn btn-sm btn-ghost" onclick="logoutAndTitle()">返回</button>
     </div>
   </div>
 </div>
@@ -416,19 +993,42 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <!-- ══ CHAR CREATE ══ -->
 <div id="s-create" class="screen">
   <div style="width:100%;max-width:820px">
-    <div class="title-sm center" style="margin-bottom:4px">鑄造英雄</div>
-    <div class="divider">✦ CHARACTER CREATION ✦</div>
-    <div class="inp-group"><label class="inp-label">英雄之名</label><input class="inp" id="new-name" placeholder="輸入你的名字..." maxlength="20"></div>
-    <label class="inp-label">選擇職業</label>
+    <div class="title-sm center" style="margin-bottom:6px;letter-spacing:6px">創造勇者</div>
+    <div class="divider">輸入名字，選擇職業</div>
+    <div class="inp-group">
+      <label class="inp-label">勇者之名</label>
+      <input class="inp" id="new-name" placeholder="輸入你的名字" maxlength="20">
+    </div>
+    <label class="inp-label" style="margin-bottom:10px;display:block">◆ 選擇職業</label>
     <div class="job-grid">
-      <div class="job-card" data-job="mage" onclick="selJob(this)"><span class="job-icon"></span><span class="job-name">法師</span><span class="job-desc">掌控Arcane能量，以毀滅性魔法焚盡敵人</span><span class="job-stat">INT+5 · MP+40</span></div>
-      <div class="job-card" data-job="warrior" onclick="selJob(this)"><span class="job-icon">⚔️</span><span class="job-name">戰士</span><span class="job-desc">鋼鐵意志前線戰士，以盾守護同伴</span><span class="job-stat">STR+5 · HP+40</span></div>
-      <div class="job-card" data-job="rogue" onclick="selJob(this)"><span class="job-icon">️</span><span class="job-name">盜賊</span><span class="job-desc">隱於暗影，致命背刺令敵措手不及</span><span class="job-stat">AGI+5 · CRIT+15%</span></div>
-      <div class="job-card" data-job="priest" onclick="selJob(this)"><span class="job-icon">✨</span><span class="job-name">聖職者</span><span class="job-desc">神聖之光使者，治癒與詛咒兩用</span><span class="job-stat">WIS+5 · HEAL+30%</span></div>
+      <div class="job-card" data-job="mage" onclick="selJob(this)">
+        <span class="job-icon"></span>
+        <span class="job-name">法師</span>
+        <span class="job-desc">強力咒文焚盡敵人的魔法使者</span>
+        <span class="job-stat">INT +5  MP +40</span>
+      </div>
+      <div class="job-card" data-job="warrior" onclick="selJob(this)">
+        <span class="job-icon">⚔️</span>
+        <span class="job-name">勇者</span>
+        <span class="job-desc">以劍與盾守護夥伴的正義戰士</span>
+        <span class="job-stat">STR +5  HP +40</span>
+      </div>
+      <div class="job-card" data-job="rogue" onclick="selJob(this)">
+        <span class="job-icon">️</span>
+        <span class="job-name">盜賊</span>
+        <span class="job-desc">以迅捷身法突襲要害的暗影刺客</span>
+        <span class="job-stat">AGI +5  CRIT +15%</span>
+      </div>
+      <div class="job-card" data-job="priest" onclick="selJob(this)">
+        <span class="job-icon">✨</span>
+        <span class="job-name">聖職者</span>
+        <span class="job-desc">以回復與祈禱支援夥伴的神之使者</span>
+        <span class="job-stat">WIS +5  HEAL +30%</span>
+      </div>
     </div>
     <div style="display:flex;gap:10px;justify-content:center">
-      <button class="btn btn-sm btn-red" onclick="goScreen('chars')">返回</button>
-      <button class="btn" onclick="doCreateChar()">踏上旅途</button>
+      <button class="btn btn-sm btn-ghost" onclick="goScreen('chars')">返回</button>
+      <button class="btn" onclick="doCreateChar()">就選這位勇者！</button>
     </div>
   </div>
 </div>
@@ -437,73 +1037,73 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <div id="s-game" class="screen-full">
   <aside class="sidebar">
     <div class="char-portrait" id="g-portrait">⚔️</div>
-    <div class="char-name-sb" id="g-name">英雄</div>
-    <div class="char-job-sb" id="g-job">ADVENTURER · Lv.1</div>
+    <div class="char-name-sb" id="g-name">勇者</div>
+    <div class="char-job-sb" id="g-job">WARRIOR · Lv.1</div>
     <div class="bar-wrap bar-hp"><div class="bar-label"><span>HP</span><span id="g-hp">100/100</span></div><div class="bar-track"><div class="bar-fill" id="g-hp-bar" style="width:100%"></div></div></div>
     <div class="bar-wrap bar-mp"><div class="bar-label"><span>MP</span><span id="g-mp">60/60</span></div><div class="bar-track"><div class="bar-fill" id="g-mp-bar" style="width:100%"></div></div></div>
     <div class="bar-wrap bar-xp"><div class="bar-label"><span>EXP</span><span id="g-xp">0/100</span></div><div class="bar-track"><div class="bar-fill" id="g-xp-bar" style="width:0%"></div></div></div>
-    <div class="sec">屬性</div>
+    <div class="sec">能力值</div>
     <div id="g-stats"></div>
     <div class="sec">技能</div>
     <div id="g-skills"></div>
     <div class="sec">裝備</div>
     <div id="g-equip"></div>
     <div style="margin-top:auto;padding-top:10px;display:flex;flex-direction:column;gap:6px">
-      <button class="btn btn-sm btn-full btn-bag" onclick="goScreen('bag')"> 背包</button>
-      <button class="btn btn-sm btn-full" onclick="goScreen('skills')">技能樹</button>
+      <button class="btn btn-sm btn-full btn-bag" onclick="goScreen('bag')">道具‧裝備</button>
+      <button class="btn btn-sm btn-full" onclick="goScreen('skills')">學習技能</button>
       <button class="btn btn-sm btn-full" onclick="goScreen('lobby')">副本大廳</button>
-      <button class="btn btn-sm btn-full btn-red" onclick="goScreen('chars')">換角色</button>
+      <button class="btn btn-sm btn-full btn-ghost" onclick="goScreen('chars')">更換角色</button>
     </div>
   </aside>
 
   <main class="story-area">
     <div class="story-header">
-      <span class="chapter-lbl" id="g-chapter">第一章：黑暗的預兆</span>
-      <span class="loc-lbl" id="g-loc"> 村莊廣場</span>
+      <span class="chapter-lbl" id="g-chapter">◆ 第一章：魔王的覺醒</span>
+      <span class="loc-lbl" id="g-loc">■ 起始之村</span>
     </div>
     <div class="story-scroll" id="g-story"></div>
     <div class="choices-area">
-      <div class="timer-bar-wrap hide" id="g-timer-wrap"><div class="timer-bar" id="g-timer-bar"></div><div class="timer-txt" id="g-timer-txt">15秒</div></div>
+      <div class="timer-bar-wrap hide" id="g-timer-wrap"><div class="timer-bar" id="g-timer-bar"></div><div class="timer-txt" id="g-timer-txt">剩餘 15秒</div></div>
       <div id="g-choices"></div>
     </div>
   </main>
 
   <aside class="right-panel">
-    <div class="sec">副本地圖</div>
+    <div class="sec">地圖</div>
     <div class="mini-map" id="g-map"></div>
-    <div class="sec">任務</div>
+    <div class="sec">任務目標</div>
     <ul id="g-quests" style="list-style:none">
-      <li class="quest-item"> 調查村莊失蹤事件</li>
+      <li class="quest-item">◆ 查探魔王的下落</li>
     </ul>
-    <div class="sec">組隊</div>
+    <div class="sec">夥伴</div>
     <div id="g-party"></div>
-    <div class="sec">聊天</div>
+    <div class="sec">冒險者之聲</div>
     <div class="chat-area" id="g-chat"></div>
     <div class="chat-inp-row">
-      <input class="chat-inp" id="g-chat-inp" placeholder="發送訊息..." maxlength="120" onkeydown="if(event.key==='Enter')sendChat()">
-      <button class="chat-send" onclick="sendChat()">發</button>
+      <input class="chat-inp" id="g-chat-inp" placeholder="傳送訊息..." maxlength="120" onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="chat-send" onclick="sendChat()">送</button>
     </div>
     <div style="margin-top:auto;padding-top:10px;display:flex;flex-direction:column;gap:6px">
-      <button class="btn btn-sm btn-full" onclick="enterSoloDungeon()">單人副本</button>
+      <button class="btn btn-sm btn-full" onclick="enterSoloDungeon()">單人冒險</button>
     </div>
   </aside>
 
   <!-- ══ MOBILE BOTTOM TAB BAR ══ -->
   <nav class="mob-tabs">
     <button class="mob-tab active" id="mtab-story" onclick="mobTab('story')">
-      <span class="tab-icon"></span><span>故事</span>
+      <span class="tab-icon"></span><span>冒險</span>
     </button>
     <button class="mob-tab" id="mtab-char" onclick="mobTab('char')">
-      <span class="tab-icon">⚔️</span><span>角色</span>
+      <span class="tab-icon">⚔️</span><span>勇者</span>
     </button>
     <button class="mob-tab" id="mtab-bag" onclick="mobTab('bag')">
-      <span class="tab-icon"></span><span>背包</span>
+      <span class="tab-icon"></span><span>道具</span>
     </button>
     <button class="mob-tab" id="mtab-dungeon" onclick="mobTab('dungeon')">
-      <span class="tab-icon">⚡</span><span>副本</span>
+      <span class="tab-icon"></span><span>副本</span>
     </button>
     <button class="mob-tab" id="mtab-chat" onclick="mobTab('chat')">
-      <span class="tab-icon"></span><span>聊天</span>
+      <span class="tab-icon"></span><span>夥伴</span>
     </button>
   </nav>
 
@@ -512,19 +1112,19 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <button class="mob-panel-close" onclick="mobTab('story')">✕ 關閉</button>
     <div style="text-align:center;margin-bottom:14px">
       <div style="font-size:3.5rem" id="mob-portrait">⚔️</div>
-      <div style="font-family:'Cinzel',serif;font-size:1.15rem;color:var(--gold)" id="mob-name">英雄</div>
-      <div style="font-size:.88rem;color:var(--text-dim);letter-spacing:2px" id="mob-job">WARRIOR · Lv.1</div>
+      <div style="font-family:'DotGothic16',monospace;font-size:1.1rem;color:var(--gold);letter-spacing:2px" id="mob-name">勇者</div>
+      <div style="font-family:'DotGothic16',monospace;font-size:.8rem;color:var(--text-dim);letter-spacing:2px" id="mob-job">WARRIOR · Lv.1</div>
     </div>
     <div class="bar-wrap bar-hp"><div class="bar-label"><span>HP</span><span id="mob-hp">-/-</span></div><div class="bar-track"><div class="bar-fill" id="mob-hp-bar" style="width:100%"></div></div></div>
     <div class="bar-wrap bar-mp"><div class="bar-label"><span>MP</span><span id="mob-mp">-/-</span></div><div class="bar-track"><div class="bar-fill" id="mob-mp-bar" style="width:100%"></div></div></div>
     <div class="bar-wrap bar-xp"><div class="bar-label"><span>EXP</span><span id="mob-xp">-/-</span></div><div class="bar-track"><div class="bar-fill" id="mob-xp-bar" style="width:0%"></div></div></div>
-    <div class="sec">屬性</div>
+    <div class="sec">屬性數值</div>
     <div class="mob-stat-grid" id="mob-stats"></div>
-    <div class="sec">技能</div>
+    <div class="sec">已學技能</div>
     <div id="mob-skills"></div>
     <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
-      <button class="btn btn-full" onclick="mobTab('story');goScreen('skills')">技能樹</button>
-      <button class="btn btn-full btn-red" onclick="mobTab('story');goScreen('chars')">換角色</button>
+      <button class="btn btn-full" onclick="mobTab('story');goScreen('skills')">學習技能</button>
+      <button class="btn btn-full btn-ghost" onclick="mobTab('story');goScreen('chars')">更換角色</button>
     </div>
   </div>
 
@@ -535,22 +1135,22 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
   <div class="mob-panel" id="mob-panel-dungeon">
     <button class="mob-panel-close" onclick="mobTab('story')">✕ 關閉</button>
-    <div class="title-sm center" style="margin-bottom:16px">⚡ 副本</div>
-    <button class="btn btn-full" style="margin-bottom:10px" onclick="mobTab('story');enterSoloDungeon()">⚔ 進入單人副本</button>
-    <button class="btn btn-full" onclick="mobTab('story');goScreen('lobby')"> 多人副本大廳</button>
-    <div class="sec" style="margin-top:20px">副本說明</div>
-    <p style="font-size:.95rem;color:var(--text-dim);line-height:1.75">擊敗怪物獲得 EXP 同金幣，升級後解鎖技能樹節點。Boss 關卡有機率掉落稀有裝備。</p>
+    <div class="title-sm center" style="margin-bottom:16px;letter-spacing:4px">副本大廳</div>
+    <button class="btn btn-full" style="margin-bottom:8px" onclick="mobTab('story');enterSoloDungeon()">獨自踏上征途</button>
+    <button class="btn btn-full" onclick="mobTab('story');goScreen('lobby')">尋找隊友</button>
+    <div class="sec" style="margin-top:20px">冒險指南</div>
+    <p style="font-family:'DotGothic16',monospace;font-size:.8rem;color:var(--silver);line-height:2;letter-spacing:.5px">擊敗怪物獲取經驗值和金幣，升級後解鎖新技能。擊敗魔王手下有機率掉落稀有裝備！</p>
   </div>
 
   <div class="mob-panel" id="mob-panel-chat">
     <button class="mob-panel-close" onclick="mobTab('story')">✕ 關閉</button>
-    <div class="sec">聊天</div>
+    <div class="sec">冒險者之聲</div>
     <div class="chat-area" id="mob-chat" style="max-height:calc(100dvh - 260px)"></div>
     <div class="chat-inp-row" style="margin-top:10px">
-      <input class="chat-inp" id="mob-chat-inp" placeholder="發送訊息..." maxlength="120"
+      <input class="chat-inp" id="mob-chat-inp" placeholder="傳送訊息..." maxlength="120"
         onkeydown="if(event.key==='Enter')sendChatMob()"
-        style="font-size:1rem;min-height:48px">
-      <button class="chat-send" onclick="sendChatMob()" style="padding:0 16px">發</button>
+        style="font-size:.95rem;min-height:48px">
+      <button class="chat-send" onclick="sendChatMob()" style="padding:0 14px">送</button>
     </div>
   </div>
 </div>
@@ -558,11 +1158,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <!-- ══ BAG / INVENTORY ══ -->
 <div id="s-bag" class="screen">
   <div class="bag-wrap">
-    <div class="title-sm center" style="margin-bottom:4px"> 背包</div>
-    <div class="gold-display" id="bag-gold"> 0 金幣</div>
+    
+    <div class="title-sm center" style="margin-bottom:6px;letter-spacing:6px">道具袋</div>
+    <div class="gold-display" id="bag-gold">◆ 金幣：0 G</div>
     <div class="bag-tabs">
-      <button class="bag-tab active" id="btab-equip" onclick="switchBagTab('equip')">裝備中</button>
-      <button class="bag-tab" id="btab-inv" onclick="switchBagTab('inv')">背包物品</button>
+      <button class="bag-tab active" id="btab-equip" onclick="switchBagTab('equip')">已裝備</button>
+      <button class="bag-tab" id="btab-inv" onclick="switchBagTab('inv')">持有道具</button>
     </div>
 
     <!-- Equipped gear -->
@@ -576,7 +1177,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
 
     <div class="center mt12">
-      <button class="btn btn-sm btn-red" onclick="goScreen('game')">返回</button>
+      <button class="btn btn-sm btn-ghost" onclick="goScreen('game')">返回</button>
     </div>
   </div>
 </div>
@@ -585,12 +1186,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <div class="item-modal-bg" id="item-modal">
   <div class="item-modal">
     <span class="item-modal-icon" id="modal-icon">⚔️</span>
-    <div class="item-modal-name" id="modal-name">物品名稱</div>
-    <div class="item-modal-type" id="modal-type">TYPE · RARITY</div>
+    <div class="item-modal-name" id="modal-name">物品</div>
+    <div class="item-modal-type" id="modal-type">類型 · 稀有度</div>
     <div class="item-modal-stats" id="modal-stats"></div>
     <div class="item-modal-btns">
       <button class="btn btn-sm btn-full" id="modal-equip-btn" onclick="doEquipItem()" style="display:none">裝備</button>
-      <button class="btn btn-sm btn-full btn-red" onclick="closeItemModal()">關閉</button>
+      <button class="btn btn-sm btn-full btn-ghost" onclick="closeItemModal()">關閉</button>
     </div>
   </div>
 </div>
@@ -599,8 +1200,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <div id="s-combat" class="screen">
   <div class="combat-wrap">
     <div class="combat-hdr">
-      <div class="combat-title">⚔  BATTLE  ⚔</div>
-      <div class="combat-sub-lbl" id="c-sub">深淵副本</div>
+      <div class="combat-title">敵人出現了！</div>
+      <div class="combat-sub-lbl" id="c-sub">副本大廳</div>
     </div>
     <div class="party-hps" id="c-party-hps"></div>
     <div class="combatants">
@@ -614,9 +1215,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <div class="vs-txt">VS</div>
       <div class="fighter" id="c-enemy-card">
         <span class="fighter-icon" id="c-e-icon"></span>
-        <div class="fighter-name" id="c-e-name">深淵惡魔</div>
-        <div class="fighter-job" id="c-e-type">DEMON · Lv.3</div>
-        <div class="bar-wrap bar-hp"><div class="bar-label"><span>HP</span><span id="c-e-hp">-/-</span></div><div class="bar-track"><div class="bar-fill" id="c-e-hp-bar" style="width:100%;background:var(--red)"></div></div></div>
+        <div class="fighter-name" id="c-e-name">魔王的手下</div>
+        <div class="fighter-job" id="c-e-type">魔王軍 · Lv.?</div>
+        <div class="bar-wrap bar-hp"><div class="bar-label"><span>HP</span><span id="c-e-hp">-/-</span></div><div class="bar-track"><div class="bar-fill" id="c-e-hp-bar" style="width:100%;background:linear-gradient(90deg,var(--red2),var(--red))"></div></div></div>
       </div>
     </div>
     <div class="turn-indicator hide" id="c-turn-ind"></div>
@@ -630,36 +1231,38 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <!-- ══ SKILL TREE ══ -->
 <div id="s-skills" class="screen">
   <div style="width:100%;max-width:700px;padding:0 10px">
-    <div class="title-sm center" style="margin-bottom:4px">技能樹</div>
-    <div class="divider">可用技能點：<span class="sp-display" id="sk-sp">0</span></div>
+    
+    <div class="title-sm center" style="margin-bottom:6px;letter-spacing:4px">學習技能</div>
+    <div class="divider">技能點數：<span class="sp-display" id="sk-sp">0</span> 點</div>
     <div class="skill-tree" id="sk-grid"></div>
-    <div class="center mt12"><button class="btn btn-sm" onclick="goScreen('game')">返回</button></div>
+    <div class="center mt12"><button class="btn btn-sm btn-ghost" onclick="goScreen('game')">返回</button></div>
   </div>
 </div>
 
 <!-- ══ DUNGEON LOBBY ══ -->
 <div id="s-lobby" class="screen">
   <div class="lobby-wrap">
-    <div class="title-sm center" style="margin-bottom:4px">副本大廳</div>
-    <div class="divider">✦ DUNGEON LOBBY ✦</div>
+    
+    <div class="title-sm center" style="margin-bottom:6px;letter-spacing:4px">冒險者公會</div>
+    <div class="divider">尋找夥伴，一起踏上征途吧！</div>
 
     <!-- Room view (after joining) -->
     <div id="lobby-room-view" class="hide">
-      <div class="panel panel-gold" style="margin-bottom:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="panel" style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <div>
-            <div style="font-family:'Cinzel',serif;font-size:.82rem;color:var(--text-dim);margin-bottom:4px" id="lob-title-lbl">房間名稱</div>
+            <div style="font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--text-dim);margin-bottom:4px;letter-spacing:2px" id="lob-title-lbl">隊伍名稱</div>
             <div style="display:flex;align-items:center;gap:10px">
               <span class="room-code" id="lob-code">----</span>
-              <span id="lob-privacy-badge" style="font-size:.72rem;padding:2px 8px;border:1px solid var(--border-hi);color:var(--text-dim)">公開</span>
+              <span id="lob-privacy-badge" style="font-family:'DotGothic16',monospace;font-size:.7rem;padding:2px 8px;border:1px solid var(--border-gold);color:var(--silver)">公開</span>
             </div>
           </div>
-          <button class="btn btn-sm" id="lob-ready-btn" onclick="toggleReady()">準備好了</button>
+          <button class="btn btn-sm" id="lob-ready-btn" onclick="toggleReady()">準備完成</button>
         </div>
         <div id="lob-members"></div>
         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-sm hide" id="lob-start-btn" onclick="startDungeon()">▶ 開始副本</button>
-          <button class="btn btn-sm btn-red" onclick="leaveRoom()">離開房間</button>
+          <button class="btn btn-sm hide" id="lob-start-btn" onclick="startDungeon()">踏上征途！</button>
+          <button class="btn btn-sm btn-ghost" onclick="leaveRoom()">離開隊伍</button>
         </div>
       </div>
     </div>
@@ -668,38 +1271,38 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div id="lobby-main-view">
       <!-- Create room -->
       <div class="panel" style="margin-bottom:16px">
-        <div class="sec" style="margin-top:0">創建房間</div>
+        <div class="sec" style="margin-top:0">組建隊伍</div>
         <div class="inp-group" style="margin-bottom:10px">
-          <label class="inp-label">房間名稱（選填）</label>
-          <input class="inp" id="room-title-inp" placeholder="例：新手歡迎 · 隨便玩" maxlength="30">
+          <label class="inp-label">隊伍名稱（選填）</label>
+          <input class="inp" id="room-title-inp" placeholder="例：一起討伐魔王！" maxlength="30">
         </div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
           <button class="btn btn-sm" id="priv-toggle-pub" onclick="setPrivacy(false)"
-            style="flex:1;background:rgba(200,168,75,.12);border-color:var(--gold)"> 公開房間</button>
-          <button class="btn btn-sm" id="priv-toggle-priv" onclick="setPrivacy(true)"
-            style="flex:1"> 私人房間</button>
+            style="flex:1;border-color:var(--border-gold-hi)">公開隊伍</button>
+          <button class="btn btn-sm btn-ghost" id="priv-toggle-priv" onclick="setPrivacy(true)"
+            style="flex:1">私人隊伍</button>
         </div>
         <input type="hidden" id="room-is-private" value="0">
-        <button class="btn btn-full" onclick="doCreateRoom()">創建並進入</button>
+        <button class="btn btn-full" onclick="doCreateRoom()">組建隊伍</button>
       </div>
 
       <!-- Join by code -->
       <div class="panel" style="margin-bottom:16px">
-        <div class="sec" style="margin-top:0">用代碼加入</div>
+        <div class="sec" style="margin-top:0">用密碼加入</div>
         <div style="display:flex;gap:8px">
-          <input class="inp" id="join-code" placeholder="輸入8位房間代碼" maxlength="8"
-            style="font-family:'Cinzel',serif;letter-spacing:3px;text-transform:uppercase;flex:1"
+          <input class="inp" id="join-code" placeholder="輸入8位密碼" maxlength="8"
+            style="font-family:'DotGothic16',monospace;letter-spacing:4px;text-transform:uppercase;flex:1"
             onkeydown="if(event.key==='Enter')doJoinRoom()">
           <button class="btn btn-sm" onclick="doJoinRoom()">加入</button>
         </div>
       </div>
 
       <!-- Public room list -->
-      <div class="sec">公開房間</div>
+      <div class="sec">公開招募中的隊伍</div>
       <div id="lob-room-list"></div>
     </div>
 
-    <div class="mt12 center"><button class="btn btn-sm btn-red" onclick="goScreen('game')">返回</button></div>
+    <div class="mt12 center"><button class="btn btn-sm btn-ghost" onclick="goScreen('game')">返回</button></div>
   </div>
 </div>
 
@@ -708,27 +1311,55 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 //  GAME DATA (client-side mirror)
 // ════════════════════════════════════════════
 const JOB_ICONS = {mage:'',warrior:'⚔️',rogue:'️',priest:'✨'};
-const JOB_NAMES = {mage:'法師',warrior:'戰士',rogue:'盜賊',priest:'聖職者'};
+const JOB_NAMES = {mage:'法師',warrior:'勇者',rogue:'盜賊',priest:'聖職者'};
 
 const JOB_SKILLS_CLI = {
-  mage:    [{id:'basic_atk',name:'魔法箭',cost:0,dmg:'4-8+INT',icon:''},{id:'fireball',name:'火球術',cost:15,dmg:'10-18+INT',icon:''},{id:'frost',name:'冰凍術',cost:20,dmg:'8-14+眩暈',icon:'❄️'},{id:'arcane_burst',name:'魔力爆發',cost:30,dmg:'18-30+INT',icon:''}],
-  warrior: [{id:'basic_atk',name:'普通攻擊',cost:0,dmg:'6-12+STR',icon:'⚔️'},{id:'heavy_blow',name:'重擊',cost:10,dmg:'12-20+STR',icon:'⚡'},{id:'shield_bash',name:'護盾衝鋒',cost:15,dmg:'8-14+眩暈',icon:'️'},{id:'rage',name:'狂怒',cost:20,dmg:'16-28+STR',icon:''}],
-  rogue:   [{id:'basic_atk',name:'匕首刺',cost:0,dmg:'5-10+AGI',icon:'️'},{id:'backstab',name:'背刺',cost:12,dmg:'14-22+暴擊',icon:''},{id:'poison_mist',name:'毒霧',cost:18,dmg:'5-8+中毒',icon:''},{id:'shadow_step',name:'暗影步',cost:25,dmg:'20-32',icon:'️'}],
-  priest:  [{id:'basic_atk',name:'神聖打擊',cost:0,dmg:'4-8+WIS',icon:'✝️'},{id:'holy_smite',name:'神聖爆擊',cost:15,dmg:'10-18+WIS',icon:'✨'},{id:'heal',name:'治癒術',cost:20,dmg:'治癒+WIS',icon:''},{id:'divine_wrath',name:'神罰',cost:30,dmg:'16-26+WIS',icon:'☀️'}],
+  mage:    [{id:'basic_atk',name:'火矢術',cost:0,dmg:'4-8+INT',icon:''},{id:'fireball',name:'烈焰術',cost:15,dmg:'10-18+INT',icon:''},{id:'frost',name:'冰矢術',cost:20,dmg:'8-14+冰結',icon:'❄️'},{id:'arcane_burst',name:'滅世焰',cost:30,dmg:'18-30+INT',icon:''}],
+  warrior: [{id:'basic_atk',name:'攻擊',cost:0,dmg:'6-12+STR',icon:'⚔️'},{id:'heavy_blow',name:'重擊',cost:10,dmg:'12-20+STR',icon:''},{id:'shield_bash',name:'盾擊',cost:15,dmg:'8-14+眩暈',icon:'️'},{id:'rage',name:'蓄力',cost:20,dmg:'下次2倍傷害',icon:''}],
+  rogue:   [{id:'basic_atk',name:'斬擊',cost:0,dmg:'5-10+AGI',icon:'️'},{id:'backstab',name:'背刺',cost:12,dmg:'14-22+會心',icon:''},{id:'poison_mist',name:'毒霧斬',cost:18,dmg:'5-8+中毒',icon:''},{id:'shadow_step',name:'暗影步',cost:25,dmg:'20-32',icon:'️'}],
+  priest:  [{id:'basic_atk',name:'聖光擊',cost:0,dmg:'4-8+WIS',icon:'✨'},{id:'holy_smite',name:'神聖爆擊',cost:15,dmg:'10-18+WIS',icon:''},{id:'heal',name:'治癒術',cost:20,dmg:'HP回復+WIS',icon:''},{id:'divine_wrath',name:'十字聖光',cost:30,dmg:'16-26+WIS',icon:'☀️'}],
 };
 
 const SKILL_TREES_CLI = {
-  mage:    [{id:'fire1',name:'火系精通I',icon:'',desc:'火球術傷害+20%',cost:1,req:null},{id:'ice1',name:'冰系精通I',icon:'❄️',desc:'冰凍機率+15%',cost:1,req:null},{id:'mp1',name:'魔力流通I',icon:'',desc:'MP上限+30',cost:1,req:null},{id:'fire2',name:'火系精通II',icon:'',desc:'火球術傷害+40%',cost:2,req:'fire1'},{id:'chain',name:'連鎖閃電',icon:'⚡',desc:'新技能：攻擊三目標',cost:2,req:'ice1'},{id:'arcane',name:'奧術覺醒',icon:'',desc:'全魔法傷害+30%',cost:3,req:'fire2'},{id:'meteor',name:'隕石術',icon:'☄️',desc:'解鎖終極技能',cost:4,req:'arcane'},{id:'mp2',name:'魔力流通II',icon:'',desc:'MP+60，回復+5/回合',cost:2,req:'mp1'},{id:'blink',name:'瞬移步',icon:'',desc:'50%機率迴避攻擊',cost:3,req:'mp2'}],
-  warrior: [{id:'str1',name:'力量精通I',icon:'',desc:'STR+3，基礎攻擊+15%',cost:1,req:null},{id:'def1',name:'盾牌術I',icon:'️',desc:'DEF+3，格擋+10%',cost:1,req:null},{id:'hp1',name:'鋼鐵之身I',icon:'❤️',desc:'HP上限+50',cost:1,req:null},{id:'str2',name:'力量精通II',icon:'',desc:'STR+5，重擊+30%',cost:2,req:'str1'},{id:'taunt',name:'嘲諷',icon:'',desc:'強制敵人攻擊自己',cost:2,req:'def1'},{id:'berserk',name:'狂暴化',icon:'',desc:'HP<30%時攻擊+50%',cost:3,req:'str2'},{id:'unbreak',name:'不屈意志',icon:'️',desc:'致死攻擊保留1HP（一次）',cost:4,req:'berserk'},{id:'hp2',name:'鋼鐵之身II',icon:'',desc:'HP+80，每回合恢復5HP',cost:2,req:'hp1'},{id:'counter',name:'反擊術',icon:'',desc:'受攻擊後30%機率反擊',cost:3,req:'hp2'}],
-  rogue:   [{id:'agi1',name:'敏捷精通I',icon:'️',desc:'AGI+3，閃避+10%',cost:1,req:null},{id:'crit1',name:'暗器術I',icon:'',desc:'暴擊率+10%',cost:1,req:null},{id:'poison1',name:'毒學I',icon:'',desc:'毒霧持續+2回合',cost:1,req:null},{id:'agi2',name:'敏捷精通II',icon:'',desc:'AGI+5，連擊+15%',cost:2,req:'agi1'},{id:'shadow',name:'暗影融合',icon:'',desc:'每回合開始隱身1回合',cost:2,req:'crit1'},{id:'crit2',name:'致命一擊',icon:'',desc:'暴擊傷害+100%',cost:3,req:'agi2'},{id:'assassin',name:'刺客覺醒',icon:'️',desc:'解鎖終結技：瞬殺',cost:4,req:'crit2'},{id:'smoke',name:'煙霧彈',icon:'️',desc:'3回合降低敵命中',cost:2,req:'poison1'},{id:'trap',name:'陷阱術',icon:'⛓️',desc:'開戰前設置陷阱',cost:3,req:'smoke'}],
-  priest:  [{id:'holy1',name:'神聖精通I',icon:'✨',desc:'神聖傷害+20%',cost:1,req:null},{id:'heal1',name:'治癒強化I',icon:'',desc:'治癒效果+30%',cost:1,req:null},{id:'mp1',name:'神力流通I',icon:'',desc:'MP+40',cost:1,req:null},{id:'holy2',name:'神聖精通II',icon:'⚡',desc:'神聖+40%，對不死族+60%',cost:2,req:'holy1'},{id:'revive',name:'復活術',icon:'️',desc:'一場戰鬥可復活一次',cost:2,req:'heal1'},{id:'barrier',name:'神聖護盾',icon:'️',desc:'每回合有護盾抵擋傷害',cost:3,req:'holy2'},{id:'smite',name:'神聖審判',icon:'☀️',desc:'解鎖終極：神聖爆發',cost:4,req:'barrier'},{id:'mp2',name:'神力流通II',icon:'',desc:'MP+60，技能消耗-20%',cost:2,req:'mp1'},{id:'aura',name:'光明氣場',icon:'',desc:'每回合自動恢復HP+8',cost:3,req:'mp2'}],
+  mage:    [{id:'fire1',name:'烈焰精通I',icon:'',desc:'火系魔法威力+20%',cost:1,req:null},{id:'ice1',name:'冰封精通I',icon:'❄️',desc:'冰系冰結機率+15%',cost:1,req:null},{id:'mp1',name:'魔力流通I',icon:'',desc:'最大MP+30',cost:1,req:null},{id:'fire2',name:'烈焰精通II',icon:'',desc:'火系魔法威力+40%',cost:2,req:'fire1'},{id:'chain',name:'連雷術',icon:'⚡',desc:'新技能：攻擊全體敵人',cost:2,req:'ice1'},{id:'arcane',name:'魔法覺醒',icon:'',desc:'所有魔法威力+30%',cost:3,req:'fire2'},{id:'meteor',name:'終極滅焰',icon:'☄️',desc:'解鎖至高魔法',cost:4,req:'arcane'},{id:'mp2',name:'魔力流通II',icon:'',desc:'MP+60，每回合回復MP+5',cost:2,req:'mp1'},{id:'blink',name:'瞬移步',icon:'',desc:'50%機率迴避攻擊',cost:3,req:'mp2'}],
+  warrior: [{id:'str1',name:'力量精通I',icon:'',desc:'力量+3，攻擊力+15%',cost:1,req:null},{id:'def1',name:'盾牌術I',icon:'️',desc:'防禦+3，格擋率+10%',cost:1,req:null},{id:'hp1',name:'鋼鐵之身I',icon:'❤️',desc:'最大HP+50',cost:1,req:null},{id:'str2',name:'力量精通II',icon:'',desc:'力量+5，重擊+30%',cost:2,req:'str1'},{id:'taunt',name:'嘲諷吼',icon:'',desc:'強制敵人攻擊自己',cost:2,req:'def1'},{id:'berserk',name:'勇者奮起',icon:'',desc:'HP低於30%時攻擊力+50%',cost:3,req:'str2'},{id:'unbreak',name:'不屈意志',icon:'️',desc:'致命一擊後以1HP存活（一次）',cost:4,req:'berserk'},{id:'hp2',name:'鋼鐵之身II',icon:'',desc:'HP+80，每回合回復HP+5',cost:2,req:'hp1'},{id:'counter',name:'反擊之型',icon:'',desc:'受攻擊時30%機率反擊',cost:3,req:'hp2'}],
+  rogue:   [{id:'agi1',name:'敏捷精通I',icon:'',desc:'敏捷+3，迴避率+10%',cost:1,req:null},{id:'crit1',name:'暗器術I',icon:'',desc:'會心一擊機率+10%',cost:1,req:null},{id:'poison1',name:'毒學I',icon:'',desc:'毒霧斬持續+2回合',cost:1,req:null},{id:'agi2',name:'敏捷精通II',icon:'️',desc:'敏捷+5，連擊+15%',cost:2,req:'agi1'},{id:'shadow',name:'暗影融合',icon:'',desc:'每回合開始半透明1回合',cost:2,req:'crit1'},{id:'crit2',name:'致命月牙',icon:'',desc:'會心傷害+100%',cost:3,req:'agi2'},{id:'assassin',name:'盜賊覺醒',icon:'️',desc:'解鎖終極技能：瞬殺',cost:4,req:'crit2'},{id:'smoke',name:'煙霧彈',icon:'️',desc:'3回合降低敵人命中',cost:2,req:'poison1'},{id:'trap',name:'陷阱術',icon:'⛓️',desc:'戰鬥前設置陷阱',cost:3,req:'smoke'}],
+  priest:  [{id:'holy1',name:'聖光精通I',icon:'✨',desc:'神聖攻擊威力+20%',cost:1,req:null},{id:'heal1',name:'治癒精通I',icon:'',desc:'回復魔法效果+30%',cost:1,req:null},{id:'mp1',name:'神聖之力I',icon:'',desc:'最大MP+40',cost:1,req:null},{id:'holy2',name:'聖光精通II',icon:'⚡',desc:'神聖+40%，對不死族+60%',cost:2,req:'holy1'},{id:'revive',name:'復活術',icon:'️',desc:'一場戰鬥可令夥伴復活一次',cost:2,req:'heal1'},{id:'barrier',name:'聖光護盾',icon:'️',desc:'每回合有護盾抵擋傷害',cost:3,req:'holy2'},{id:'smite',name:'十字聖光爆',icon:'☀️',desc:'解鎖終極技能：神聖爆發',cost:4,req:'barrier'},{id:'mp2',name:'神聖之力II',icon:'',desc:'MP+60，技能消耗-20%',cost:2,req:'mp1'},{id:'aura',name:'神聖氣場',icon:'',desc:'每回合自動回復HP+8',cost:3,req:'mp2'}],
 };
 
 const STORY = [
-  {chapter:'第一章：黑暗的預兆',loc:'村莊廣場',text:`夜幕低垂，月光被烏雲遮蔽。\n\n你站在村莊廣場的中心，四周的火把在詭異的風中搖曳。三天前，村莊東邊的農戶家庭無故失蹤，留下的只有燒焦的土地和詭異的黑色符文。\n\n村長緊張地走近你：「勇者，我們發現失蹤者的足跡通往黑森林深處。傳說那裡有一個被封印千年的深淵之門，但...封印似乎已被破壞了。」\n\n遠處，隱約傳來低沉的嚎叫聲。`,choices:['調查黑森林邊緣的足跡','向村民詢問更多線索','先前往神殿祈求指引']},
-  {chapter:'第一章：黑暗的預兆',loc:'黑森林邊緣',text:{0:`你沿著足跡深入黑森林邊緣。樹木異常扭曲，樹皮刻滿詭異符文，散發著微弱紫色光芒。\n\n突然，你發現一個倒臥的行商，還有一口氣。他顫抖著說：「他們...被一道黑光捲走了...那個符文...是召喚陣...」\n\n就在此時，林中傳來樹枝折斷聲，一對赤紅眼睛在黑暗中凝視著你。`,1:`你向幾位老村民詢問。一位白髮老嫗緊張地說：「一千年前，黑法師曾在森林深處打開了通往深淵的門。那場戰爭死去無數人，最後是聖光騎士以自身為代價才封印了它。」\n\n她遞給你一枚古舊徽章：「這是我祖先留下來的...說是能抵擋深淵之力。」\n\n【獲得聖光護符 — 戰鬥開始時獲得護盾】`,2:`神殿中，祭司神情凝重翻閱古籍：「深淵符文出現，意味著封印正在崩解。必須在月圓之前封印三個深淵節點，否則黑暗之神將完全甦醒。」\n\n他將一瓶發光液體遞給你：「這是聖水，在封印節點時需要用到它。」\n\n【獲得聖水×3 — 對深淵生物造成額外傷害】`},choices:['進入森林深處探索','回村莊準備好再出發','檢查那個神秘符文']},
-  {chapter:'第二章：深淵之門',loc:'黑森林深處',text:`穿越濃密的黑森林，你終於看到了它——一道高達十米的黑色拱門，表面刻滿複雜的魔法陣，散發著令人不安的黑紫色光芒。\n\n拱門前方，三個黑袍人影正在進行某種儀式，他們的吟誦聲迴盪在空氣中。在他們身邊，幾個被黑鎖鏈縛住的村民跪倒在地。\n\n時間不多了——你必須做出決定。`,choices:['直接衝入戰鬥解救村民','悄悄靠近，先破壞符文陣','觀察儀式，等待時機']},
-  {chapter:'第二章：深淵之門',loc:'黑色拱門前',text:{0:`你高喊一聲，拔劍衝向黑袍人。其中一人轉身，臉上沒有眼睛，只有一片黑暗——「愚蠢的凡人...」\n\n戰鬥開始！`,1:`你悄悄潛近符文陣，在暗影中摸索到符文的核心。你的手觸碰到它的瞬間，一股電流穿過全身——儀式被打斷了！\n\n三個黑袍人同時轉向你，眼中燃燒著憤怒的紫色火焰。`,2:`你在遠處觀察，發現儀式快到最後一步。其中一個黑袍人似乎察覺到了你的存在，他緩緩轉身，嘴角浮現出一個不自然的微笑。\n\n「等待是種智慧...但你等待的時間到了。」`},choices:['進入副本繼續劇情','返回村莊補給','等待時機']},
+  {
+    chapter:'第一章：魔王的覺醒',
+    loc:'起始之村',
+    text:`這裡是起始之村。\n\n「勇者大人，你終於回來了！」\n\n你從長眠中甦醒，村長焦急的聲音傳入耳中：「不得了，發生了恐怖的事情！村莊東邊的洞窟中，魔王的軍勢一個接一個地出現，千年前傳說勇者所封印的封印，如今正被破壞……」\n\n「只有您才是我們唯一的依靠。請您一定要保護這座村莊！」`,
+    choices:['先調查東方洞窟','備齊武器裝備後再出發','向村民打探情報']
+  },
+  {
+    chapter:'第一章：魔王的覺醒',
+    loc:'東方洞窟入口',
+    text:{
+      0:`走近洞窟入口，石板上刻有魔王的紋章，散發著不祥的光芒。\n\n突然，岩石後方湧出黑霧，一隻史萊姆出現眼前。牠的眼睛與普通史萊姆不同，燃燒著赤紅色的火焰——被魔王之力侵蝕，變得兇猛無比。\n\n「嗚嗯……人類……要消滅……」\n\n無法迴避戰鬥了！`,
+      1:`武器店老人苦著臉說：「現在普通的武器對那些怪物可能效果不佳……不過，還是看你的本事。」\n\n鎧甲店的女兒擔心地說：「請多保重，勇者大人。進入東邊洞窟的士兵，沒有一個回來過。」\n\n【獲得了裝備！防禦+5】`,
+      2:`老婦壓低聲音說道：「魔王名叫索瑪。千年前曾被封印一次，但牠正派遣爪牙到各地，企圖解除封印。」\n\n一個小孩跑過來說：「哎，冒險書上記載著傳說勇者的墓地！那裡好像沉睡著強力裝備！」\n\n【地圖更新！解鎖了新地點！】`
+    },
+    choices:['與魔王手下決戰！','先做好準備','尋找別的路']
+  },
+  {
+    chapter:'第二章：封印之神',
+    loc:'魔王手下的巢穴',
+    text:`洞窟深處，火把的火焰在石廣場中搖曳。\n\n正前方是一扇巨大的石門——從裡面傳來低沉的嗥叫聲，不祥的魔力滿溢而出。\n\n「你來了……勇者……」\n\n黑暗中傳來聲音。「你妄想解除封印？真是愚蠢。這扇門之後，等待著的是真正的黑暗。回頭吧，否則——」\n\n石門前，巨大的黑影出現了。`,
+    choices:['衝上去戰鬥！', '唸出魔法咒文', '先觀察形勢']
+  },
+  {
+    chapter:'第二章：封印之神',
+    loc:'封印之門前',
+    text:{
+      0:`「憑你這種渺小的勇者，根本無法打倒魔王大人！」\n\n黑暗騎士拔劍而起——戰鬥開始！`,
+      1:`勇者深吸一口氣，默唸從父親處繼承的咒文。古老的話語震動了空氣，封印之門上刻的紋章開始有了反應。\n\n黑暗騎士退縮了一步。「那……那道光是什麼！？莫非……是勾蘭血脈的傳人！？」`,
+      2:`仔細觀察，發現黑暗騎士的鎧甲上有細小的破綻——心臟位置的一點，那就是弱點所在。\n\n另外，也發現後方的石門有機關，按照特定順序按下開關就能打開。`
+    },
+    choices:['繼續深入副本！', '回村莊補充裝備', '再觀察一會兒']
+  },
 ];
 
 // ════════════════════════════════════════════
@@ -740,7 +1371,7 @@ let state = {
   prevChoice: null,
   mapCells: [],
   currentCell: 12,
-  quests: [{text:' 調查村莊失蹤事件',done:false},{text:' 封印深淵節點(0/3)',done:false}],
+  quests: [{text:'◆ 查探魔王的下落',done:false},{text:'◆ 收集封印碎片(0/3)',done:false}],
   timerInterval: null,
 
   // Combat
@@ -804,7 +1435,7 @@ async function doLogin() {
 async function doRegister() {
   try {
     await AC_API.register(document.getElementById('r-user').value, document.getElementById('r-email').value, document.getElementById('r-pass').value);
-    notify('帳號創建成功！','ok');
+    notify('帳號已成功建立！','ok');
     goScreen('chars');
   } catch(e) { notify(e.message,'err'); }
 }
@@ -864,7 +1495,7 @@ function selJob(el){
 
 async function doCreateChar() {
   const name=document.getElementById('new-name').value.trim();
-  if(!name) return notify('請輸入名字','err');
+  if(!name) return notify('輸入你的名字','err');
   if(!selectedJobVal) return notify('請選擇職業','err');
   try {
     state.char = await AC_API.createChar(name, selectedJobVal);
@@ -874,7 +1505,7 @@ async function doCreateChar() {
     connectGameSocket();
     goScreen('game');
     refreshSidebar();
-    notify(`${name} 踏上了旅途！`,'ok');
+    notify(`${name} 踏上了征途！`,'ok');
   } catch(e) { notify(e.message,'err'); }
 }
 
@@ -987,7 +1618,7 @@ function sendChatMob() {
 // ════════════════════════════════════════════
 function renderStory() {
   const ch=STORY[state.storyIdx];
-  if(!ch) { appendStory('system','✦ 故事待續..更多章節即將推出 ✦'); return; }
+  if(!ch) { appendStory('system','◆ 故事待續……更多章節即將推出'); return; }
 
   document.getElementById('g-chapter').textContent=ch.chapter;
   document.getElementById('g-loc').textContent=' '+ch.loc;
@@ -1026,7 +1657,7 @@ function pickChoice(idx, text) {
   AC_API.updateStory(state.char.id, state.storyIdx).catch(()=>{});
 
   if(state.storyIdx>=2 && Math.random()<0.5) {
-    setTimeout(()=>{ appendStory('system','⚠ 遭遇敵人！'); setTimeout(startSoloCombat,800); },400);
+    setTimeout(()=>{ appendStory('system','⚠ 遭遇了敵人！'); setTimeout(startSoloCombat,800); },400);
     return;
   }
   setTimeout(renderStory,500);
@@ -1064,12 +1695,12 @@ function renderMap(){
 //  SOLO COMBAT (client-side simulation)
 // ════════════════════════════════════════════
 const ENEMIES_CLI=[
-  {name:'深淵小鬼',icon:'',type:'DEMON · Lv.1',hp:40,atk:[6,12],def:3,xp:25,gold:15,loot:'小型符文石'},
-  {name:'骷髏戰士',icon:'',type:'UNDEAD · Lv.2',hp:60,atk:[10,18],def:5,xp:40,gold:22,loot:'骨質碎片'},
-  {name:'暗影獵人',icon:'',type:'SHADOW · Lv.2',hp:55,atk:[12,20],def:4,xp:42,gold:20,loot:'暗影匕首'},
-  {name:'深淵惡魔',icon:'',type:'DEMON · Lv.3',hp:90,atk:[14,24],def:6,xp:65,gold:35,loot:'惡魔之核'},
-  {name:'混沌巨人',icon:'',type:'GIANT · Lv.4',hp:150,atk:[20,35],def:10,xp:100,gold:70,loot:'混沌石板'},
-  {name:'深淵守門者',icon:'',type:'BOSS · Lv.5',hp:250,atk:[25,45],def:14,xp:220,gold:160,loot:'守門者之鑰'},
+  {name:'史萊姆',        icon:'',type:'魔王軍 · Lv.1', hp:40, atk:[6,12], def:3, xp:25, gold:15, loot:'細小寶石'},
+  {name:'蝙蝠惡魔',        icon:'',type:'魔王軍 · Lv.2', hp:60, atk:[10,18],def:5, xp:40, gold:22, loot:'翼之碎片'},
+  {name:'石像魔偶',        icon:'',type:'魔王軍 · Lv.2', hp:55, atk:[12,20],def:4, xp:42, gold:20, loot:'土塵粉末'},
+  {name:'奇美拉',          icon:'',type:'魔王軍 · Lv.3', hp:90, atk:[14,24],def:6, xp:65, gold:35, loot:'奇美拉之翼'},
+  {name:'黑暗騎士',    icon:'⚔️',type:'魔王軍 · Lv.4', hp:150,atk:[20,35],def:10,xp:100,gold:70, loot:'黑鐵頭盔'},
+  {name:'魔王手下',  icon:'',type:'魔王軍 · Lv.5 BOSS',hp:250,atk:[25,45],def:14,xp:220,gold:160,loot:'魔王之眼'},
 ];
 
 function enterSoloDungeon(){ startSoloCombat(); }
@@ -1081,7 +1712,7 @@ function startSoloCombat(){
   state.combat={ active:true, enemy:e, myTurn:true };
 
   const jn=JOB_NAMES[c.job], ji=JOB_ICONS[c.job];
-  document.getElementById('c-sub').textContent=`深淵副本 — Lv.${c.level}層`;
+  document.getElementById('c-sub').textContent=`魔王城 — ${c.level}層`;
   document.getElementById('c-p-icon').textContent=ji;
   document.getElementById('c-p-name').textContent=c.name;
   document.getElementById('c-p-job').textContent=`${jn} · Lv.${c.level}`;
@@ -1091,10 +1722,10 @@ function startSoloCombat(){
   document.getElementById('c-log').innerHTML='';
   document.getElementById('c-party-hps').innerHTML='';
   updateCombatUI();
-  addCLog('system',`⚔ 戰鬥開始！${e.icon} ${e.name} 出現了！`);
+  addCLog('system',`${e.icon} ${e.name}出現了！`);
   renderCombatSkills(true);
 
-  document.getElementById('c-turn-ind').textContent='⚔ 輪到你出擊！';
+  document.getElementById('c-turn-ind').textContent='▶ 勇者出擊！';
   document.getElementById('c-turn-ind').className='turn-indicator my';
   document.getElementById('c-turn-ind').classList.remove('hide');
 
@@ -1144,7 +1775,7 @@ function useSoloCombatSkill(skillId, mpCost){
     const wis=c.stats.WIS||10;
     const heal=Math.floor(18+wis*1.1);
     c.hp=Math.min(c.maxHp, c.hp+heal);
-    addCLog('player',`✨ ${c.name} 施放 ${sk.name}，恢復 ${heal} HP！`);
+    addCLog('player',`✨ ${c.name} 使出 ${sk.name} → 回復了 ${heal} 點HP！`);
   } else {
     const stat=(sk.id.includes('magic')||sk.id.includes('fire')||sk.id.includes('frost')||sk.id.includes('arcane')||sk.id.includes('holy')||sk.id.includes('divine'))?c.stats.INT:c.stats.STR;
     let base=Math.floor(Math.random()*10+6)+Math.floor((stat||10)*0.5);
@@ -1152,7 +1783,7 @@ function useSoloCombatSkill(skillId, mpCost){
     const crit=Math.random()<0.12+(c.stats.AGI||8)*0.005;
     const dmg=crit?Math.floor(base*1.8):base;
     e.currentHp=Math.max(0,e.currentHp-dmg);
-    addCLog('player',`${sk.icon} ${c.name} 使用 ${sk.name} → 造成 ${dmg} 傷害${crit?' [暴擊!]':''}！`);
+    addCLog('player',`${sk.icon} ${c.name} 使出 ${sk.name} → 造成 ${dmg} 點傷害${crit?' 【會心一擊！】':''}！`);
     document.getElementById('c-e-icon').classList.add('shake');
     setTimeout(()=>document.getElementById('c-e-icon').classList.remove('shake'),400);
   }
@@ -1163,19 +1794,19 @@ function useSoloCombatSkill(skillId, mpCost){
   if(e.currentHp<=0){ soloVictory(); return; }
 
   // Enemy turn
-  document.getElementById('c-turn-ind').textContent='敵人回合...';
+  document.getElementById('c-turn-ind').textContent='敵人回合……';
   document.getElementById('c-turn-ind').className='turn-indicator wait';
   setTimeout(()=>{
     const [mn,mx]=e.atk;
     let dmg=Math.floor(Math.random()*(mx-mn+1))+mn;
     dmg=Math.max(1,dmg-Math.floor((c.stats.DEF||10)*0.35));
     c.hp=Math.max(0,c.hp-dmg);
-    addCLog('enemy',` ${e.name} 攻擊 → ${c.name} 受到 ${dmg} 傷害！`);
+    addCLog('enemy',` ${e.name} 的攻擊 → ${c.name}受到了 ${dmg} 點傷害！`);
     document.getElementById('c-p-icon').classList.add('shake');
     setTimeout(()=>document.getElementById('c-p-icon').classList.remove('shake'),400);
     updateCombatUI();
     if(c.hp<=0){ soloDefeat(); return; }
-    document.getElementById('c-turn-ind').textContent='⚔ 輪到你出擊！';
+    document.getElementById('c-turn-ind').textContent='▶ 勇者出擊！';
     document.getElementById('c-turn-ind').className='turn-indicator my';
     renderCombatSkills(true);
   },900);
@@ -1184,7 +1815,7 @@ function useSoloCombatSkill(skillId, mpCost){
 async function soloVictory(){
   const e=state.combat.enemy, c=state.char;
   state.combat.active=false;
-  addCLog('system',`✦ 勝利！獲得 ${e.xp} EXP · ¥${e.gold} · ${e.loot}`);
+  addCLog('system',`${e.name}被消滅了！獲得 ${e.xp} 點經驗值，得到 ${e.gold} 金幣！`);
 
   // Advance map
   state.mapCells[state.currentCell].enemy=false;
@@ -1198,7 +1829,7 @@ async function soloVictory(){
     const result = await AC_API.soloReward(c.id, { xp:e.xp, gold:e.gold, loot:e.loot });
     state.char = result.character;
     if(result.leveledUp){
-      setTimeout(()=>appendStory('reward',` 升級！達到 Lv.${result.character.level}！獲得2技能點！`),200);
+      setTimeout(()=>appendStory('reward',`◆ 升級了！達到 Lv.${result.character.level}！獲得2個技能點！`),200);
     }
   } catch(err){
     // Fallback: local update if server unreachable
@@ -1208,29 +1839,29 @@ async function soloVictory(){
 
   setTimeout(()=>{
     goScreen('game');
-    appendStory('reward',`⚔ 勝利！擊敗了 ${e.name}！獲得 ${e.xp} EXP · ¥${e.gold} ·  ${e.loot}`);
+    appendStory('reward',`◆ 擊敗了 ${e.name}！${e.xp} EXP · ${e.gold} G · 獲得【${e.loot}】！`);
     refreshSidebar();
   },1500);
 }
 
 async function soloDefeat(){
-  addCLog('system','☠ 你倒下了...被傳送回村莊，HP恢復30%。');
+  addCLog('system','☠ 勇者倒下了……被傳送回起始之村，HP稍作恢復。');
   state.char.hp=Math.floor(state.char.maxHp*0.3);
   state.combat.active=false;
   try { await AC_API.saveHpMp(state.char.id, state.char.hp, state.char.mp); } catch(e){}
-  setTimeout(()=>{ goScreen('game'); appendStory('system','☠ 你被敵人擊敗，HP恢復30%。'); refreshSidebar(); },1800);
+  setTimeout(()=>{ goScreen('game'); appendStory('system','☠ 被敵人擊倒了……HP稍作恢復。'); refreshSidebar(); },1800);
 }
 
 function doFlee(){
   if(!state.combat.active) return;
   const c=state.char;
   if(Math.random()<0.45+(c.stats.AGI||8)*0.01){
-    addCLog('system','✓ 逃跑成功！'); state.combat.active=false;
-    setTimeout(()=>{ goScreen('game'); appendStory('system','你成功逃離了戰鬥。'); },700);
+    addCLog('system','▶ 成功逃跑了！'); state.combat.active=false;
+    setTimeout(()=>{ goScreen('game'); appendStory('system','從戰鬥中成功逃脫。'); },700);
   } else {
     const dmg=Math.floor(8+Math.random()*12);
     c.hp=Math.max(1,c.hp-dmg);
-    addCLog('enemy',`逃跑失敗！受到 ${dmg} 背刺傷害！`); updateCombatUI();
+    addCLog('enemy',`逃跑失敗！受到了 ${dmg} 點傷害！`); updateCombatUI();
   }
 }
 
@@ -1241,7 +1872,7 @@ function checkLevelUpLocal(){
     c.xp-=c.xpNext; c.level++; c.xpNext=Math.floor(c.xpNext*1.4); c.sp+=2;
     c.maxHp+=15; c.hp=c.maxHp; c.maxMp+=8;
     Object.keys(c.stats).forEach(k=>c.stats[k]++);
-    setTimeout(()=>appendStory('reward',` 升級！達到 Lv.${c.level}！獲得2技能點！`),100);
+    setTimeout(()=>appendStory('reward',`◆ 升級了！達到 Lv.${c.level}！獲得2個技能點！`),100);
   }
 }
 function checkLevelUp(){ checkLevelUpLocal(); } // alias for multiplayer path
@@ -1279,7 +1910,7 @@ async function doLearnSkill(id,cost,req){
   const learned=new Set(c.learnedSkills||[]);
   if(learned.has(id)) return;
   if(req&&!learned.has(req)) return notify('需要先學習前置技能！','err');
-  if(c.sp<cost) return notify(`技能點不足（需要 ${cost} SP）`,'err');
+  if(c.sp<cost) return notify(`技能點不足（需要 ${cost} 點）`,'err');
   try {
     const updated=await AC_API.learnSkill(c.id,id,cost);
     state.char=updated;
@@ -1432,7 +2063,7 @@ function connectGameSocket(){
   state.socket=AC_API.connectSocket();
   const s=state.socket;
 
-  s.on('connect',()=>notify('已連線至伺服器','ok'));
+  s.on('connect',()=>notify('已連線到伺服器！','ok'));
   s.on('connect_error',()=>notify('伺服器連線失敗','err'));
 
   s.on('room:update',({members, status})=>{
@@ -1491,7 +2122,7 @@ function connectGameSocket(){
 
     // Turn indicator
     const myTurn = currentTurn === myId;
-    document.getElementById('c-turn-ind').textContent = myTurn ? '⚔ 輪到你出擊！' : '等待其他隊員...';
+    document.getElementById('c-turn-ind').textContent = myTurn ? '▶ 勇者出擊！' : '等待隊友行動……';
     document.getElementById('c-turn-ind').className = 'turn-indicator ' + (myTurn?'my':'wait');
     document.getElementById('c-turn-ind').classList.remove('hide');
 
@@ -1521,7 +2152,7 @@ function connectGameSocket(){
     const myTurn=currentTurn===myId;
     renderCombatSkills(myTurn, true); // true = multiplayer mode
     const ind=document.getElementById('c-turn-ind');
-    ind.textContent=myTurn?'⚔ 輪到你出擊！':'等待其他隊員...';
+    ind.textContent=myTurn?'▶ 勇者出擊！':'等待隊友行動……';
     ind.className='turn-indicator '+(myTurn?'my':'wait');
     ind.classList.remove('hide');
     if(myTurn&&timeoutMs){
@@ -1535,13 +2166,13 @@ function connectGameSocket(){
 
   s.on('combat:end',({result,rewards,party})=>{
     if(result==='victory'){
-      notify(`勝利！+${rewards.xp}EXP +¥${rewards.gold}`,'ok');
+      notify(`◆ 戰鬥勝利！獲得 ${rewards.xp} EXP · ${rewards.gold} G！`,'ok');
       state.char.xp+=rewards.xp; state.char.gold+=rewards.gold;
       checkLevelUp(); refreshSidebar();
     } else {
       notify('全滅...已傳回村莊','err');
     }
-    setTimeout(()=>{ goScreen('game'); appendStory(result==='victory'?'reward':'system', result==='victory'?`✦ 副本勝利！${rewards.xp}EXP · ¥${rewards.gold}`:'☠ 全滅。隊伍被傳回村莊。'); },2000);
+    setTimeout(()=>{ goScreen('game'); appendStory(result==='victory'?'reward':'system', result==='victory'?`◆ 副本通關！獲得 ${rewards.xp} EXP · ${rewards.gold} G！`:'☠ 全滅……被傳送回起始之村。'); },2000);
   });
 
   s.on('dungeon:completed',()=>{
@@ -1576,11 +2207,11 @@ function doFlee(){
   } else {
     const c=state.char;
     if(Math.random()<0.45+(c.stats.AGI||8)*0.01){
-      addCLog('system','✓ 逃跑成功！'); state.combat.active=false;
-      setTimeout(()=>{ goScreen('game'); appendStory('system','你成功逃離了戰鬥。'); },700);
+      addCLog('system','▶ 成功逃跑了！'); state.combat.active=false;
+      setTimeout(()=>{ goScreen('game'); appendStory('system','從戰鬥中成功逃脫。'); },700);
     } else {
       const dmg=Math.floor(8+Math.random()*12); c.hp=Math.max(1,c.hp-dmg);
-      addCLog('enemy',`逃跑失敗！受到 ${dmg} 傷害！`); updateCombatUI();
+      addCLog('enemy',`逃跑失敗！受到了 ${dmg} 點傷害！`); updateCombatUI();
     }
   }
 }
@@ -1649,7 +2280,7 @@ async function loadBag() {
   const inv = c.inventory || [];
   const grid = document.getElementById('bag-inv-grid');
   if (!inv.length) {
-    grid.innerHTML = '<div class="inv-empty">背包空空如也...<br>擊敗敵人獲取戰利品</div>';
+    grid.innerHTML = '<div class="inv-empty">背包空空如也…<br>擊敗怪物來獲取戰利品吧！</div>';
     return;
   }
   grid.innerHTML = inv.map((item, idx) => {
@@ -1698,7 +2329,7 @@ async function doEquipItem() {
   try {
     const updated = await AC_API.equipItem(state.char.id, _modalItem.itemId, _modalItem.type);
     state.char = updated;
-    notify(`裝備了 ${_modalItem.name}！`, 'ok');
+    notify(`已裝備【${_modalItem.name}】！`, 'ok');
     closeItemModal();
     loadBag();
     refreshSidebar();
@@ -1723,9 +2354,9 @@ function renderMobBag() {
     </div>`;
   }).join('') + '</div>';
 
-  html += `<div class="sec">背包物品</div>`;
+  html += `<div class="sec">持有道具</div>`;
   if (!inv.length) {
-    html += '<div class="inv-empty">背包空空如也...</div>';
+    html += '<div class="inv-empty">背包空空如也…</div>';
   } else {
     html += `<div class="inv-grid">` + inv.map((item, idx) =>
       `<div class="inv-item" onclick="openItemModal(${idx})">
