@@ -742,7 +742,6 @@ function useSoloCombatSkill(skillId, mpCost) {
   _executeSkillEffect(c, e, chosen);
 }
 
-// ✅ 手動點擊補血技能時，自動尋找血量最低的目標
 function useCombatSkillMulti(skillId, mpCost, targetIdx = -1) {
   if(state.socket && state.roomCode) {
     let actualTarget = targetIdx;
@@ -774,7 +773,7 @@ function useCombatSkillMulti(skillId, mpCost, targetIdx = -1) {
 }
 
 // ════════════════════════════════════════════
-//  AUTO BATTLE ENGINE (✅ 自動尋找補血目標與技能)
+//  AUTO BATTLE ENGINE (✅ 零魔力防呆完美修復版)
 // ════════════════════════════════════════════
 function _schedulePlayer() {
   if(!_autoRunning || !state.combat?.active) return;
@@ -813,7 +812,7 @@ function _doPlayerTurn() {
           const myIdx = _multiCombatState.party.findIndex(p => Number(p.characterId) === Number(c.id));
           if (myIdx !== -1) {
               const myP = _multiCombatState.party[myIdx];
-              if (myP.hp / myP.maxHp <= 0.4) { // 其他職業 40% 才補自己
+              if (myP.hp / myP.maxHp <= 0.4) { 
                   needsHeal = true;
                   targetIdx = myIdx;
               }
@@ -825,14 +824,14 @@ function _doPlayerTurn() {
       }
   }
 
-  let chosen = skills[0];
+  let chosen = null; // 預設不能選技能，避免選到無魔力的技能
   let isHealSkill = false;
 
-  // 2. 如果有人缺血，尋找已裝備中最強的補血技能
+  // 2. 如果有人缺血，尋找已裝備中最強且 MP 足夠的補血技能
   if (needsHeal) {
       const healSkills = skills.filter(s => s && (s.id.includes('heal') || s.id === 'revive' || s.id === 'bless' || s.id === 'barrier' || ['magic_shield','warcry','iron_skin','evade','lifesteal'].includes(s.id)));
       if (healSkills.length > 0) {
-          const availableHeals = healSkills.filter(s => _mp() >= s.cost).sort((a,b) => b.cost - a.cost);
+          const availableHeals = healSkills.filter(s => Number(_mp()) >= Number(s.cost||0)).sort((a,b) => b.cost - a.cost);
           if (availableHeals.length > 0) {
               chosen = availableHeals[0];
               isHealSkill = true;
@@ -840,18 +839,25 @@ function _doPlayerTurn() {
       }
   }
 
-  // 3. 如果不需要補血 (或沒 MP)，就找最強攻擊
-  if (!isHealSkill) {
-      let best = null;
+  // 3. 如果不需要補血 (或補血技 MP 不夠)，找最強且 MP 足夠的攻擊技能
+  if (!chosen) {
+      let bestAtk = null;
       for(const sk of skills) {
         if(!sk) continue;
         if(sk.id.includes('heal') || sk.id==='revive' || sk.id==='bless' || sk.id==='barrier' || ['magic_shield','warcry','iron_skin','evade','lifesteal'].includes(sk.id)) continue;
-        if(_mp() >= sk.cost) best = sk;
+        if(Number(_mp()) >= Number(sk.cost||0)) bestAtk = sk; 
       }
-      chosen = best || skills[0];
+      chosen = bestAtk;
   }
 
-  // 4. 執行
+  // ✅ 4. 終極零魔力防呆：如果所有裝備中的技能 MP 都不夠，強制使用 0 MP 普攻！
+  if (!chosen) {
+      const allSkills = typeof window.getAvailableActiveSkills === 'function' ? window.getAvailableActiveSkills(c) : [];
+      chosen = allSkills.find(s => s && s.id === 'basic_atk') || { id: 'basic_atk', name: '普通攻擊', cost: 0 };
+      isHealSkill = false; 
+  }
+
+  // 5. 執行技能
   if(_combatMode === 'multi') {
     useCombatSkillMulti(chosen.id, chosen.cost, isHealSkill ? targetIdx : 0);
   } else {
