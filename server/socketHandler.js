@@ -143,7 +143,7 @@ module.exports = function initSockets(io) {
       const allReady = members.every(m => Number(m.is_leader) === 1 || Number(m.is_ready) === 1);
       if (!allReady) return socket.emit('error', { msg: '必須等待所有人準備完成' });
 
-      io.to(roomCode).emit('dungeon:countdown', { seconds: 5 });
+      io.to(roomCode).emit('dungeon:countdown', { seconds: 3 }); // 加快為 3 秒
       
       setTimeout(async () => {
         const checkRoom = await queryOne('SELECT * FROM dungeon_rooms WHERE id=?', [room.id]);
@@ -153,7 +153,7 @@ module.exports = function initSockets(io) {
             await startDungeon(io, room, finalMembers, roomCode);
           }
         }
-      }, 5000);
+      }, 3000);
     });
 
     // ── HOST AUTO SYNC ─────────────────────────────────
@@ -167,7 +167,7 @@ module.exports = function initSockets(io) {
       }
     });
 
-    // ── RESTART VOTE ────────────────────────
+    // ── RESTART VOTE (多人連戰的核心優化) ──────────────
     socket.on('combat:request_restart', async ({ roomCode }) => {
       roomCode = String(roomCode).toUpperCase();
       const info = socketIndex.get(socket.id);
@@ -178,20 +178,28 @@ module.exports = function initSockets(io) {
       const isLeader = await queryOne('SELECT id FROM room_members WHERE room_id=? AND character_id=? AND (is_leader=1 OR is_leader=TRUE)', [room.id, info.characterId]);
       if (!isLeader) return;
 
-      activeVotes.set(roomCode, {
-        room: room,
-        yesVotes: new Set([info.characterId])
-      });
+      const members = await getRoomMembers(room.id);
+      
+      // ✅ 如果房間只有隊長一個人，不需要等投票，直接秒開
+      if (members.length <= 1) {
+          await execute('UPDATE room_members SET is_ready=TRUE WHERE room_id=? AND character_id=?', [room.id, info.characterId]);
+          io.to(roomCode).emit('room:update', { members, status: 'waiting' });
+          io.to(roomCode).emit('dungeon:countdown', { seconds: 3 });
+          setTimeout(async () => {
+            const finalMembers = await getRoomMembers(room.id);
+            await startDungeon(io, room, finalMembers, roomCode);
+          }, 3000);
+          return;
+      }
 
-      io.to(roomCode).emit('combat:restart_vote', { seconds: 10 });
-
-      setTimeout(async () => {
+      // 如果有隊友，最多等 10 秒
+      const timeoutId = setTimeout(async () => {
         const voteData = activeVotes.get(roomCode);
         if (!voteData) return;
         activeVotes.delete(roomCode);
 
-        const members = await getRoomMembers(room.id);
-        for (const m of members) {
+        const currentMembers = await getRoomMembers(room.id);
+        for (const m of currentMembers) {
           if (!voteData.yesVotes.has(m.character_id)) {
             await kickMember(room, m.character_id, '未確認再戰，已離開隊伍');
           } else {
@@ -202,21 +210,48 @@ module.exports = function initSockets(io) {
         const finalMembers = await getRoomMembers(room.id);
         if (finalMembers.length > 0) {
           io.to(roomCode).emit('room:update', { members: finalMembers, status: 'waiting' });
-          io.to(roomCode).emit('dungeon:countdown', { seconds: 5 });
+          io.to(roomCode).emit('dungeon:countdown', { seconds: 3 });
           setTimeout(async () => {
             await startDungeon(io, room, finalMembers, roomCode);
-          }, 5000);
+          }, 3000);
         }
       }, 10000);
+
+      activeVotes.set(roomCode, {
+        room: room,
+        yesVotes: new Set([info.characterId]),
+        timeout: timeoutId
+      });
+
+      io.to(roomCode).emit('combat:restart_vote', { seconds: 10 });
     });
 
-    socket.on('combat:vote_yes', ({ roomCode }) => {
+    socket.on('combat:vote_yes', async ({ roomCode }) => {
       roomCode = String(roomCode).toUpperCase();
       const info = socketIndex.get(socket.id);
       if (!info || info.roomCode !== roomCode) return;
+      
       const voteData = activeVotes.get(roomCode);
       if (voteData) {
         voteData.yesVotes.add(info.characterId);
+        
+        // ✅ 只要所有活著的成員都按了確認 (或被自動戰鬥確認了)，就立刻中斷倒數並開戰
+        const members = await getRoomMembers(voteData.room.id);
+        if (voteData.yesVotes.size >= members.length) {
+            clearTimeout(voteData.timeout);
+            activeVotes.delete(roomCode);
+            
+            for (const m of members) {
+              await execute('UPDATE room_members SET is_ready=TRUE WHERE room_id=? AND character_id=?', [voteData.room.id, m.character_id]);
+            }
+            
+            const finalMembers = await getRoomMembers(voteData.room.id);
+            io.to(roomCode).emit('room:update', { members: finalMembers, status: 'waiting' });
+            io.to(roomCode).emit('dungeon:countdown', { seconds: 3 });
+            setTimeout(async () => {
+              await startDungeon(io, voteData.room, finalMembers, roomCode);
+            }, 3000);
+        }
       }
     });
 
@@ -297,7 +332,6 @@ module.exports = function initSockets(io) {
     if (!attacker || attacker.hp <= 0) { advanceTurn(io, session); return; }
 
     const jobSkills = JOB_SKILLS ? JOB_SKILLS[attacker.job] : [];
-    
     const skill     = jobSkills?.find(s => s.id === skillId) || { name: '普通攻擊', cost: 0, type: 'physical', baseDmg: [5, 10] };
 
     if (skill.cost > attacker.mp) {
@@ -406,7 +440,6 @@ module.exports = function initSockets(io) {
         if (e.loot && Math.random() < 0.6) loot.push(e.loot);
       });
 
-      // 【修復 Bug 3】補上多人戰鬥的升級判定邏輯
       for (const member of session.party) {
         const char = await queryOne('SELECT * FROM characters WHERE id=?', [member.characterId]);
         if (!char) continue;
@@ -421,7 +454,6 @@ module.exports = function initSockets(io) {
         let newStr = char.stat_str, newInt = char.stat_int, newAgi = char.stat_agi, newWis = char.stat_wis, newDef = char.stat_def;
         let leveledUp = false;
 
-        // 計算是否達到升級門檻
         while (newXp >= newXpNext) {
           newXp -= newXpNext;
           newLevel++;
@@ -461,7 +493,6 @@ module.exports = function initSockets(io) {
     });
 
     if (result === 'victory') {
-      // 【修復 Bug 2】將 maxFloors 從 5 改為 1，讓玩家刷怪時每次都是完整的結算，避免強制離開
       const maxFloors = 1;
       
       if (session.floor < maxFloors) {
