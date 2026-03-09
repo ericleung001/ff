@@ -10,6 +10,7 @@ const { router: authRouter }  = require('./routes/auth');
 const charRouter               = require('./routes/characters');
 const dungeonRouter            = require('./routes/dungeons');
 const initSockets              = require('./socketHandler');
+const { pool }                 = require('./db');
 
 const app    = express();
 const server = http.createServer(app);
@@ -20,30 +21,27 @@ const io     = new Server(server, {
 
 const PORT = parseInt(process.env.PORT) || 3000;
 
-// ── Middleware ────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../client')));
 
-// ── REST API ──────────────────────────────────────────────
 app.use('/api/auth',       authRouter);
 app.use('/api/characters', charRouter);
 app.use('/api/dungeons',   dungeonRouter);
 
-// Health check
 app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date() }));
 
-// SPA fallback — serve index.html for all non-API routes
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
     res.sendFile(path.join(__dirname, '../client/index.html'));
   }
 });
 
-// ── Socket.io ─────────────────────────────────────────────
+// ✅ 自動修正資料庫，加入 target_monster 欄位
+pool.query("ALTER TABLE dungeon_rooms ADD COLUMN target_monster VARCHAR(50) DEFAULT 'goblin'").catch(() => {});
+
 initSockets(io);
 
-// ── Start ─────────────────────────────────────────────────
 server.listen(PORT, () => {
   console.log(`
   ╔══════════════════════════════════════╗
