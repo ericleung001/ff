@@ -821,23 +821,37 @@ async function _onVictory() {
 
   // 儲存獎勵到 server
   try {
-    const updated = await AC_API.soloReward(state.char.id, {
+    const res = await AC_API.soloReward(state.char.id, {
       xp:   e.xp   || 0,
       gold: e.gold  || 0,
       loot: e.loot  || '',
       hp:   state.char.hp,
       mp:   state.char.mp
     });
-    if(updated) {
+    // server 返回 { character: {...}, leveledUp: bool }，需要取 .character
+    const updated = res?.character || res;
+    // 確保 updated 係有效角色物件（有 id、name、job）才整體替換 state.char
+    if(updated && updated.id && updated.name && updated.job) {
+      // 補回 server 可能冇回傳嘅欄位，防止 refreshSidebar 出 undefined
+      updated.equipment     = updated.equipment     || state.char.equipment     || [];
+      updated.learnedSkills = updated.learnedSkills || state.char.learnedSkills || {};
+      updated.stats         = updated.stats         || state.char.stats         || {};
+      updated.hp            = updated.hp            ?? state.char.hp;
+      updated.mp            = updated.mp            ?? state.char.mp;
       state.char = updated;
-      if(typeof refreshSidebar === 'function') refreshSidebar();
+      if(res?.leveledUp) notify('🎉 升級了！現在是 Lv.' + updated.level + '！', 'ok');
+    } else {
+      // server 回應格式有問題 → 只本地補數值，保留原有 state.char
+      state.char.xp   = (state.char.xp   || 0) + (e.xp   || 0);
+      state.char.gold = (state.char.gold || 0) + (e.gold || 0);
     }
   } catch(err) {
-    // 本地更新
+    // 網絡失敗 → 只本地補數值，保留原有 state.char
     state.char.xp   = (state.char.xp   || 0) + (e.xp   || 0);
     state.char.gold = (state.char.gold || 0) + (e.gold || 0);
-    if(typeof refreshSidebar === 'function') refreshSidebar();
   }
+  // 無論成功失敗都刷新 UI
+  if(typeof refreshSidebar === 'function') refreshSidebar();
 
   // 自動重複
   if(_autoRunning) {
