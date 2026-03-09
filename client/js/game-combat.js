@@ -474,8 +474,14 @@ function toggleCombatAuto() {
     }
     if(_currentMonster) openCombatOverlay(_currentMonster);
     else return;
-    // openCombatOverlay 會自動 _startRound，不需要繼續
+    // 重新開始：讀取 cov-count 次數，重設計數器
+    const n = Math.max(1, parseInt(document.getElementById('cov-count')?.value)||10);
+    _autoRemain = n;
+    _autoDone = 0;
     _autoRunning = true;
+    document.getElementById('cov-progress').style.display = 'flex';
+    _txt('cov-total', n);
+    _txt('cov-done', 0);
     _txt('cov-start-btn','⏸ 暫停');
     _updateAutoLabel();
     _schedulePlayer();
@@ -486,9 +492,17 @@ function toggleCombatAuto() {
   _txt('cov-start-btn', _autoRunning ? '⏸ 暫停' : '▶ 繼續');
   _updateAutoLabel();
 
-  if (_combatMode === 'multi' && state.isLeader) {
+  // Solo 同 multi 都要讀取次數
+  if(_autoRunning && _autoRemain === 0) {
     const n = Math.max(1, parseInt(document.getElementById('cov-count')?.value)||10);
-    if(_autoRunning && _autoDone === 0) _autoRemain = n;
+    _autoRemain = n;
+    _autoDone = 0;
+    document.getElementById('cov-progress').style.display = 'flex';
+    _txt('cov-total', n);
+    _txt('cov-done', 0);
+  }
+
+  if (_combatMode === 'multi' && state.isLeader) {
     state.socket.emit('combat:host_auto', { roomCode: state.roomCode, autoState: _autoRunning, count: _autoRemain });
   }
 
@@ -853,6 +867,13 @@ async function _onVictory() {
   // 無論成功失敗都刷新 UI
   if(typeof refreshSidebar === 'function') refreshSidebar();
 
+  // 勝利後改按鈕：逃跑→離開，開始→再戰
+  const fleeBtn = document.querySelector('.cov-flee-btn');
+  if(fleeBtn) {
+    fleeBtn.innerHTML = '🚪 離開';
+    fleeBtn.onclick = () => exitCombat();
+  }
+
   // 自動重複
   if(_autoRunning) {
     _autoDone++;
@@ -866,7 +887,9 @@ async function _onVictory() {
       setTimeout(()=>{ if(_autoRunning && _currentMonster) openCombatOverlay(_currentMonster); }, 400);
     } else {
       _autoRunning = false;
-      _txt('cov-start-btn','▶ 開始戰鬥');
+      _autoRemain = 0;
+      document.getElementById('cov-progress').style.display = 'none';
+      _txt('cov-start-btn','▶ 再戰一場');
       _updateAutoLabel();
       notify('✦ 自動戰鬥完成！', 'ok');
     }
