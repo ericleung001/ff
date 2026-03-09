@@ -1,3 +1,9 @@
+// ════════════════════════════════════════════
+//  GAME DATA  (client-side mirror)
+// ════════════════════════════════════════════
+const JOB_ICONS = {mage:'🧙', warrior:'⚔️', rogue:'🗡️', priest:'✨'};
+const JOB_NAMES = {mage:'法師', warrior:'勇者', rogue:'盜賊', priest:'聖職者'};
+
 const JOB_BASE = {
   mage:    { maxHp: 80,  maxMp: 120, stats: { STR:6,  INT:15, AGI:9,  WIS:10, DEF:5  } },
   warrior: { maxHp: 140, maxMp: 40,  stats: { STR:15, INT:5,  AGI:8,  WIS:7,  DEF:15 } },
