@@ -34,16 +34,28 @@ const JOB_SKILLS = {
   ],
 };
 
+// ✅ 同步與前端一模一樣的所有怪物數值
 const ENEMIES = {
-  goblin:        { id:'goblin',        name:'深淵小鬼',   icon:'👺', level:1, hp:40,  atk:[6,12],  def:3,  xp:25,  gold:15, loot:'small_rune' },
-  skeleton:      { id:'skeleton',      name:'骷髏戰士',   icon:'💀', level:2, hp:60,  atk:[10,18], def:5,  xp:40,  gold:22, loot:'bone_shard' },
-  dark_wolf:     { id:'dark_wolf',     name:'黑暗狼',     icon:'🐺', level:2, hp:55,  atk:[12,20], def:4,  xp:42,  gold:20, loot:'wolf_fang' },
-  shadow_hunter: { id:'shadow_hunter', name:'暗影獵人',   icon:'🌑', level:3, hp:80,  atk:[14,24], def:6,  xp:65,  gold:35, loot:'shadow_blade' },
-  abyss_demon:   { id:'abyss_demon',   name:'深淵惡魔',   icon:'👹', level:3, hp:100, atk:[16,28], def:8,  xp:80,  gold:50, loot:'demon_core' },
-  chaos_giant:   { id:'chaos_giant',   name:'混沌巨人',   icon:'🧌', level:4, hp:160, atk:[20,35], def:12, xp:120, gold:80, loot:'chaos_slab' },
-  gate_guardian: { id:'gate_guardian', name:'深淵守門者', icon:'🔱', level:5, hp:260, atk:[25,45], def:15, xp:250, gold:180,loot:'guardian_key', isBoss:true },
-  void_knight:   { id:'void_knight',   name:'虛空騎士',   icon:'⚫', level:6, hp:200, atk:[28,48], def:18, xp:200, gold:120,loot:'void_armor' },
-  abyss_lord:    { id:'abyss_lord',    name:'深淵領主',   icon:'🔴', level:10,hp:500, atk:[40,70], def:25, xp:600, gold:400,loot:'abyss_crown', isBoss:true },
+  slime:        { id:'slime',        name:'史萊姆',   icon:'🟢', level:1, hp:30,   atk:[3,6],    def:0,  xp:10,   gold:5,   loot:'史萊姆核心' },
+  goblin:       { id:'goblin',       name:'哥布林',   icon:'👺', level:2, hp:45,   atk:[5,9],    def:1,  xp:18,   gold:8,   loot:'哥布林耳環' },
+  bat:          { id:'bat',          name:'吸血蝙蝠', icon:'🦇', level:3, hp:38,   atk:[6,10],   def:1,  xp:22,   gold:10,  loot:'蝙蝠翅膀' },
+  wolf:         { id:'wolf',         name:'野狼',     icon:'🐺', level:4, hp:60,   atk:[8,14],   def:2,  xp:30,   gold:15,  loot:'狼牙' },
+  treant:       { id:'treant',       name:'樹人',     icon:'🌳', level:5, hp:120,  atk:[12,18],  def:5,  xp:80,   gold:40,  loot:'古樹之心', isBoss:true },
+  
+  bat_l:        { id:'bat_l',        name:'巨型蝙蝠', icon:'🦇', level:5, hp:80,   atk:[12,18],  def:3,  xp:45,   gold:22,  loot:'洞窟結晶' },
+  spider:       { id:'spider',       name:'毒蜘蛛',   icon:'🕷️', level:6, hp:70,   atk:[14,20],  def:2,  xp:50,   gold:25,  loot:'蜘蛛絲' },
+  skeleton:     { id:'skeleton',     name:'骷髏兵',   icon:'💀', level:7, hp:95,   atk:[16,24],  def:4,  xp:60,   gold:30,  loot:'枯骨' },
+  golem:        { id:'golem',        name:'石像鬼',   icon:'🗿', level:8, hp:150,  atk:[18,26],  def:8,  xp:85,   gold:45,  loot:'石魔之核' },
+  cave_boss:    { id:'cave_boss',    name:'洞窟龍',   icon:'🐉', level:9, hp:320,  atk:[28,42],  def:12, xp:250,  gold:120, loot:'龍鱗', isBoss:true },
+
+  dark_knight:  { id:'dark_knight',  name:'黑暗騎士', icon:'🗡️', level:12, hp:200,  atk:[35,52],  def:15, xp:160,  gold:90,  loot:'黑鐵碎片' },
+  witch:        { id:'witch',        name:'邪惡女巫', icon:'🧙', level:14, hp:170,  atk:[42,60],  def:10, xp:185,  gold:100, loot:'魔女之眼' },
+  demon:        { id:'demon',        name:'惡魔使者', icon:'😈', level:16, hp:260,  atk:[48,70],  def:18, xp:220,  gold:130, loot:'惡魔之骨' },
+  skeleton_k:   { id:'skeleton_k',   name:'骷髏騎士', icon:'💀', level:21, hp:460,  atk:[75,108], def:28, xp:430,  gold:240, loot:'死靈護甲' },
+  fire_dragon:  { id:'fire_dragon',  name:'炎龍幼體', icon:'🐲', level:22, hp:620,  atk:[88,120], def:35, xp:550,  gold:300, loot:'龍鱗碎片' },
+  lich:         { id:'lich',         name:'巫妖術士', icon:'🧟‍♂️', level:23, hp:580,  atk:[95,135], def:25, xp:620,  gold:350, loot:'巫妖魔典' },
+  demon_lord_l: { id:'demon_lord_l', name:'魔王近衛', icon:'👿', level:24, hp:800,  atk:[105,150],def:40, xp:800,  gold:500, loot:'魔王符文' },
+  demon_lord:   { id:'demon_lord',   name:'魔王索瑪', icon:'👹', level:25, hp:2000, atk:[130,180],def:55, xp:2500, gold:2000,loot:'封印之冠', isBoss:true },
 };
 
 const LOOT_TABLE = {
@@ -58,21 +70,14 @@ const LOOT_TABLE = {
   abyss_crown:  { name:'深淵王冠',     type:'accessory',rarity:'legend',bonus:{INT:10,WIS:10,maxMp:40} },
 };
 
-// How damage is calculated (server-authoritative)
 function calcDamage(attacker, skill, defenderDef = 0) {
-  // 🔥【BUG 修復 2】增加防呆陣列 || [5, 10]，避免找不到 baseDmg 時報錯崩潰
   const [min, max] = skill.baseDmg || [5, 10];
-  
-  // 修正回復技能的返回值格式，避免後方取 dmgInfo.dmg 時變成 undefined
   if (min === 0 && max === 0) return { dmg: 0, isCrit: false }; 
 
   let base = Math.floor(Math.random() * (max - min + 1)) + min;
-  // stat scaling
   const statKey = skill.type === 'magic' || skill.type === 'holy' ? 'INT' : 'STR';
   base += Math.floor((attacker.stats[statKey] || 10) * 0.5);
-  // defense reduction
   const reduced = Math.max(1, base - Math.floor(defenderDef * 0.35));
-  // crit
   const critChance = 0.1 + (attacker.stats.AGI || 8) * 0.005 + (skill.critBonus || 0);
   const isCrit = Math.random() < critChance;
   return { dmg: isCrit ? Math.floor(reduced * 1.8) : reduced, isCrit };
