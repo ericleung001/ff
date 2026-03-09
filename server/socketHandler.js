@@ -297,7 +297,9 @@ module.exports = function initSockets(io) {
     if (!attacker || attacker.hp <= 0) { advanceTurn(io, session); return; }
 
     const jobSkills = JOB_SKILLS ? JOB_SKILLS[attacker.job] : [];
-    const skill     = jobSkills?.find(s => s.id === skillId) || { name: '普通攻擊', cost: 0, type: 'atk' };
+    
+    // 🔥【BUG 修復 1】補上預設 baseDmg，避免找不到技能時發生 TypeError 崩潰
+    const skill     = jobSkills?.find(s => s.id === skillId) || { name: '普通攻擊', cost: 0, type: 'physical', baseDmg: [5, 10] };
 
     if (skill.cost > attacker.mp) {
       socket_to_char(io, session.roomCode, characterId, 'error', { msg: 'MP不足！' });
