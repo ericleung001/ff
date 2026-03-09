@@ -8,7 +8,6 @@ const TURN_TIMEOUT_MS = parseInt(process.env.DUNGEON_TURN_TIMEOUT) || 30000;
 
 const activeSessions = new Map();
 const socketIndex = new Map();
-const activeVotes = new Map(); 
 
 module.exports = function initSockets(io) {
 
@@ -39,7 +38,6 @@ module.exports = function initSockets(io) {
   io.on('connection', (socket) => {
     console.log(`[socket] connected: ${socket.id} user:${socket.user.userId}`);
 
-    // ── JOIN ROOM ───────────────────────────────────────
     socket.on('room:join', async ({ roomCode, characterId }) => {
       try {
         roomCode = String(roomCode).toUpperCase(); 
@@ -82,7 +80,6 @@ module.exports = function initSockets(io) {
       }
     });
 
-    // ── LEAVE ROOM ───────────────────────────
     socket.on('room:leave', async ({ roomCode }) => {
       roomCode = String(roomCode).toUpperCase();
       const info = socketIndex.get(socket.id);
@@ -96,7 +93,6 @@ module.exports = function initSockets(io) {
       }
     });
 
-    // ── KICK PLAYER ─────────────────────────
     socket.on('room:kick', async ({ roomCode, targetId }) => {
       roomCode = String(roomCode).toUpperCase();
       const info = socketIndex.get(socket.id);
@@ -112,7 +108,7 @@ module.exports = function initSockets(io) {
       io.to(roomCode).emit('room:update', { members, status: room.status });
     });
 
-    // ── READY TOGGLE ────────────────────────────────────
+    // ✅ 準備動作：透過原生機制即可處理自動再戰
     socket.on('room:ready', async ({ roomCode }) => {
       roomCode = String(roomCode).toUpperCase();
       const info = socketIndex.get(socket.id);
@@ -126,7 +122,7 @@ module.exports = function initSockets(io) {
       io.to(roomCode).emit('room:update', { members, status: room.status });
     });
 
-    // ── START DUNGEON ────────────────────
+    // ✅ 5秒倒數開戰
     socket.on('dungeon:start', async ({ roomCode }) => {
       roomCode = String(roomCode).toUpperCase();
       const info = socketIndex.get(socket.id);
@@ -139,11 +135,11 @@ module.exports = function initSockets(io) {
       if (!isLeader) return socket.emit('error', { msg: '只有隊長可以開始' });
 
       const members = await getRoomMembers(room.id);
-      
       const allReady = members.every(m => Number(m.is_leader) === 1 || Number(m.is_ready) === 1);
       if (!allReady) return socket.emit('error', { msg: '必須等待所有人準備完成' });
 
-      io.to(roomCode).emit('dungeon:countdown', { seconds: 3 }); // 加快為 3 秒
+      // 5秒倒數
+      io.to(roomCode).emit('dungeon:countdown', { seconds: 5 });
       
       setTimeout(async () => {
         const checkRoom = await queryOne('SELECT * FROM dungeon_rooms WHERE id=?', [room.id]);
@@ -153,10 +149,9 @@ module.exports = function initSockets(io) {
             await startDungeon(io, room, finalMembers, roomCode);
           }
         }
-      }, 3000);
+      }, 5000);
     });
 
-    // ── HOST AUTO SYNC ─────────────────────────────────
     socket.on('combat:host_auto', async ({ roomCode, autoState, count }) => {
       roomCode = String(roomCode).toUpperCase();
       const info = socketIndex.get(socket.id);
@@ -167,95 +162,6 @@ module.exports = function initSockets(io) {
       }
     });
 
-    // ── RESTART VOTE (多人連戰的核心優化) ──────────────
-    socket.on('combat:request_restart', async ({ roomCode }) => {
-      roomCode = String(roomCode).toUpperCase();
-      const info = socketIndex.get(socket.id);
-      if (!info || info.roomCode !== roomCode) return;
-      const room = await queryOne('SELECT * FROM dungeon_rooms WHERE room_code=?', [roomCode]);
-      if (!room || room.status !== 'waiting') return;
-
-      const isLeader = await queryOne('SELECT id FROM room_members WHERE room_id=? AND character_id=? AND (is_leader=1 OR is_leader=TRUE)', [room.id, info.characterId]);
-      if (!isLeader) return;
-
-      const members = await getRoomMembers(room.id);
-      
-      // ✅ 如果房間只有隊長一個人，不需要等投票，直接秒開
-      if (members.length <= 1) {
-          await execute('UPDATE room_members SET is_ready=TRUE WHERE room_id=? AND character_id=?', [room.id, info.characterId]);
-          io.to(roomCode).emit('room:update', { members, status: 'waiting' });
-          io.to(roomCode).emit('dungeon:countdown', { seconds: 3 });
-          setTimeout(async () => {
-            const finalMembers = await getRoomMembers(room.id);
-            await startDungeon(io, room, finalMembers, roomCode);
-          }, 3000);
-          return;
-      }
-
-      // 如果有隊友，最多等 10 秒
-      const timeoutId = setTimeout(async () => {
-        const voteData = activeVotes.get(roomCode);
-        if (!voteData) return;
-        activeVotes.delete(roomCode);
-
-        const currentMembers = await getRoomMembers(room.id);
-        for (const m of currentMembers) {
-          if (!voteData.yesVotes.has(m.character_id)) {
-            await kickMember(room, m.character_id, '未確認再戰，已離開隊伍');
-          } else {
-            await execute('UPDATE room_members SET is_ready=TRUE WHERE room_id=? AND character_id=?', [room.id, m.character_id]);
-          }
-        }
-
-        const finalMembers = await getRoomMembers(room.id);
-        if (finalMembers.length > 0) {
-          io.to(roomCode).emit('room:update', { members: finalMembers, status: 'waiting' });
-          io.to(roomCode).emit('dungeon:countdown', { seconds: 3 });
-          setTimeout(async () => {
-            await startDungeon(io, room, finalMembers, roomCode);
-          }, 3000);
-        }
-      }, 10000);
-
-      activeVotes.set(roomCode, {
-        room: room,
-        yesVotes: new Set([info.characterId]),
-        timeout: timeoutId
-      });
-
-      io.to(roomCode).emit('combat:restart_vote', { seconds: 10 });
-    });
-
-    socket.on('combat:vote_yes', async ({ roomCode }) => {
-      roomCode = String(roomCode).toUpperCase();
-      const info = socketIndex.get(socket.id);
-      if (!info || info.roomCode !== roomCode) return;
-      
-      const voteData = activeVotes.get(roomCode);
-      if (voteData) {
-        voteData.yesVotes.add(info.characterId);
-        
-        // ✅ 只要所有活著的成員都按了確認 (或被自動戰鬥確認了)，就立刻中斷倒數並開戰
-        const members = await getRoomMembers(voteData.room.id);
-        if (voteData.yesVotes.size >= members.length) {
-            clearTimeout(voteData.timeout);
-            activeVotes.delete(roomCode);
-            
-            for (const m of members) {
-              await execute('UPDATE room_members SET is_ready=TRUE WHERE room_id=? AND character_id=?', [voteData.room.id, m.character_id]);
-            }
-            
-            const finalMembers = await getRoomMembers(voteData.room.id);
-            io.to(roomCode).emit('room:update', { members: finalMembers, status: 'waiting' });
-            io.to(roomCode).emit('dungeon:countdown', { seconds: 3 });
-            setTimeout(async () => {
-              await startDungeon(io, voteData.room, finalMembers, roomCode);
-            }, 3000);
-        }
-      }
-    });
-
-    // ── COMBAT ACTION ────────────────────────────────────
     socket.on('combat:action', async ({ roomCode, skillId, targetIdx = 0 }) => {
       roomCode = String(roomCode).toUpperCase();
       const info = socketIndex.get(socket.id);
@@ -270,7 +176,6 @@ module.exports = function initSockets(io) {
       await processCombatAction(io, session, info.characterId, skillId, targetIdx);
     });
 
-    // ── DISCONNECT ───────────────────────────────────────
     socket.on('disconnect', () => {
       const info = socketIndex.get(socket.id);
       if (info) {
@@ -327,6 +232,44 @@ module.exports = function initSockets(io) {
     }, 500);
   }
 
+  // ✅ 戰鬥中房主陣亡移交機制
+  async function handleDeaths(io, session) {
+    if (session.status !== 'active') return;
+    const deadMembers = session.party.filter(p => p.hp <= 0);
+    if (deadMembers.length === 0) return;
+    if (deadMembers.length === session.party.length) return; // 全滅由 endCombat 處理
+
+    let leaderChanged = false;
+    for (const dead of deadMembers) {
+        if (dead.isDeadHandled) continue;
+        dead.isDeadHandled = true;
+
+        const isLeader = await queryOne('SELECT id FROM room_members WHERE room_id=? AND character_id=? AND is_leader=TRUE', [session.roomId, dead.characterId]);
+        if (isLeader) {
+            const survivor = session.party.find(p => p.hp > 0 && p.characterId !== dead.characterId);
+            if (survivor) {
+                await execute('UPDATE room_members SET is_leader=FALSE WHERE room_id=? AND character_id=?', [session.roomId, dead.characterId]);
+                await execute('UPDATE room_members SET is_leader=TRUE WHERE room_id=? AND character_id=?', [session.roomId, survivor.characterId]);
+                leaderChanged = true;
+                addLog(session, 'system', `👑 房主 ${dead.name} 陣亡，房主移交給 ${survivor.name}`);
+            }
+        }
+        const room = await queryOne('SELECT * FROM dungeon_rooms WHERE id=?', [session.roomId]);
+        if (room) {
+            await kickMember(room, dead.characterId, '你在戰鬥中陣亡，已離開副本！');
+        }
+        addLog(session, 'system', `☠ ${dead.name} 陣亡並離開了隊伍。`);
+    }
+
+    session.party = session.party.filter(p => p.hp > 0);
+    session.turnOrder = session.party.map(p => p.characterId);
+    
+    if (leaderChanged) {
+        const members = await getRoomMembers(session.roomId);
+        io.to(session.roomCode).emit('room:update', { members, status: 'in_progress' });
+    }
+  }
+
   async function processCombatAction(io, session, characterId, skillId, targetIdx) {
     const attacker = session.party.find(p => Number(p.characterId) === Number(characterId));
     if (!attacker || attacker.hp <= 0) { advanceTurn(io, session); return; }
@@ -359,6 +302,7 @@ module.exports = function initSockets(io) {
 
     broadcastCombatState(io, session);
     if (checkCombatEnd(io, session)) return;
+    await handleDeaths(io, session); // 檢查是否有人受反傷或毒傷死亡 (擴充用)
     advanceTurn(io, session);
   }
 
@@ -386,7 +330,7 @@ module.exports = function initSockets(io) {
     scheduleAutoTurn(io, session);
   }
 
-  function enemyTurn(io, session) {
+  async function enemyTurn(io, session) {
     if (session.status !== 'active') return;
     addLog(session, 'system', '── 敵方回合 ──');
 
@@ -404,6 +348,8 @@ module.exports = function initSockets(io) {
 
     broadcastCombatState(io, session);
     if (checkCombatEnd(io, session)) return;
+
+    await handleDeaths(io, session); // 敵方攻擊後檢查是否有人陣亡並移交房主
 
     session.turnIndex = 0;
     let skips = 0;
