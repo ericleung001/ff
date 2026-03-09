@@ -42,7 +42,7 @@ module.exports = function initSockets(io) {
     // ── JOIN ROOM ───────────────────────────────────────
     socket.on('room:join', async ({ roomCode, characterId }) => {
       try {
-        roomCode = String(roomCode).toUpperCase(); // 強制轉大寫
+        roomCode = String(roomCode).toUpperCase(); 
         const room = await queryOne('SELECT * FROM dungeon_rooms WHERE room_code=?', [roomCode]);
         if (!room) return socket.emit('error', { msg: '房間不存在' });
 
@@ -298,7 +298,6 @@ module.exports = function initSockets(io) {
 
     const jobSkills = JOB_SKILLS ? JOB_SKILLS[attacker.job] : [];
     
-    // 🔥【BUG 修復 1】補上預設 baseDmg，避免找不到技能時發生 TypeError 崩潰
     const skill     = jobSkills?.find(s => s.id === skillId) || { name: '普通攻擊', cost: 0, type: 'physical', baseDmg: [5, 10] };
 
     if (skill.cost > attacker.mp) {
@@ -407,10 +406,46 @@ module.exports = function initSockets(io) {
         if (e.loot && Math.random() < 0.6) loot.push(e.loot);
       });
 
+      // 【修復 Bug 3】補上多人戰鬥的升級判定邏輯
       for (const member of session.party) {
+        const char = await queryOne('SELECT * FROM characters WHERE id=?', [member.characterId]);
+        if (!char) continue;
+
+        let newXp = char.xp + totalXp;
+        let newGold = char.gold + totalGold;
+        let newLevel = char.level;
+        let newXpNext = char.xp_next;
+        let newMaxHp = char.max_hp;
+        let newMaxMp = char.max_mp;
+        let newSp = char.sp;
+        let newStr = char.stat_str, newInt = char.stat_int, newAgi = char.stat_agi, newWis = char.stat_wis, newDef = char.stat_def;
+        let leveledUp = false;
+
+        // 計算是否達到升級門檻
+        while (newXp >= newXpNext) {
+          newXp -= newXpNext;
+          newLevel++;
+          newXpNext = Math.floor(newXpNext * 1.4);
+          newMaxHp += 15; newMaxMp += 8; newSp += 2;
+          newStr++; newInt++; newAgi++; newWis++; newDef++;
+          leveledUp = true;
+        }
+
         await transaction(async (conn) => {
-          await conn.execute('UPDATE characters SET hp=?, mp=? WHERE id=?', [Math.max(1, member.hp), member.mp, member.characterId]);
-          await conn.execute('UPDATE characters SET xp=xp+?, gold=gold+? WHERE id=?', [totalXp, totalGold, member.characterId]);
+           await conn.execute(
+             `UPDATE characters SET
+              xp=?, xp_next=?, gold=?, level=?,
+              max_hp=?, hp=?, max_mp=?, mp=?, sp=?,
+              stat_str=?, stat_int=?, stat_agi=?, stat_wis=?, stat_def=?
+              WHERE id=?`,
+             [
+               newXp, newXpNext, newGold, newLevel,
+               newMaxHp, leveledUp ? newMaxHp : Math.max(1, member.hp),
+               newMaxMp, member.mp, newSp,
+               newStr, newInt, newAgi, newWis, newDef,
+               char.id
+             ]
+           );
         });
       }
     } else if (result === 'defeat') {
@@ -426,7 +461,9 @@ module.exports = function initSockets(io) {
     });
 
     if (result === 'victory') {
-      const maxFloors = 5;
+      // 【修復 Bug 2】將 maxFloors 從 5 改為 1，讓玩家刷怪時每次都是完整的結算，避免強制離開
+      const maxFloors = 1;
+      
       if (session.floor < maxFloors) {
         setTimeout(async () => {
           const members = await getRoomMembers(session.roomId);
