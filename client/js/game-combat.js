@@ -369,7 +369,6 @@ function joinRoomSocket(roomCode){
 function applyCombatUIVisibility() {
   const autoBar   = document.querySelector('.cov-auto-bar');
   const bottomBar = document.querySelector('.cov-bottom');
-  // 多人非隊長：隱藏自動按鈕 (由 server 控制)
   if (_combatMode === 'multi' && !state.isLeader) {
     if (autoBar)   autoBar.style.display   = 'none';
     if (bottomBar) bottomBar.style.display = 'none';
@@ -391,9 +390,14 @@ function openCombatOverlay(monsterData, isAutoRepeat = false) {
   if (!isAutoRepeat) {
     _autoRunning = false; 
     _autoDone = 0;
+    _autoRemain = 0;
   }
 
   applyCombatUIVisibility();
+
+  // ✅ 清空上一場的戰鬥日誌
+  const lg = document.getElementById('cov-log');
+  if (lg) lg.innerHTML = '';
 
   const prog = document.getElementById('cov-progress');
   if (prog) prog.style.display = _autoRunning ? 'flex' : 'none';
@@ -436,6 +440,10 @@ function openMultiCombatOverlay(floor, enemies, party) {
   const firstEnemy = enemies?.[0] || { name:'未知敵人', icon:'👹', maxHp:100, currentHp:100 };
   _currentMonster = null;
 
+  // ✅ 清空上一場的戰鬥日誌
+  const lg=document.getElementById('cov-log'); 
+  if(lg) lg.innerHTML='';
+
   const prog=document.getElementById('cov-progress'); 
   if(prog) prog.style.display = _autoRunning ? 'flex' : 'none';
   
@@ -459,7 +467,6 @@ function openMultiCombatOverlay(floor, enemies, party) {
 
   _updateMultiCombatUI();
 
-  const lg=document.getElementById('cov-log'); if(lg) lg.innerHTML='';
   _covLog('sys', `⚔️ 第 ${floor} 層戰鬥開始！`);
 
   _txt('cov-round',     `第 ${floor} 層`);
@@ -500,7 +507,11 @@ function toggleCombatAuto() {
     if (_combatMode === 'multi') {
       if (state.isLeader) {
          state.socket.emit('combat:host_auto', { roomCode: state.roomCode, autoState: true, count: n });
-         state.socket.emit('combat:request_restart', { roomCode: state.roomCode });
+         const btnClick = document.getElementById('cov-start-btn').onclick;
+         if (btnClick === startDungeon) startDungeon();
+      } else {
+         const btnClick = document.getElementById('cov-start-btn').onclick;
+         if (btnClick === toggleReady) toggleReady();
       }
       return;
     }
@@ -513,7 +524,7 @@ function toggleCombatAuto() {
   _txt('cov-start-btn', _autoRunning ? '⏸ 暫停' : '▶ 繼續');
   _updateAutoLabel();
 
-  if(_autoRunning && _autoRemain === 0) {
+  if(_autoRunning && _autoRemain <= 0) {
     const n = Math.max(1, parseInt(document.getElementById('cov-count')?.value)||10);
     _autoRemain = n;
     _autoDone = 0;
@@ -848,12 +859,10 @@ async function _onVictory() {
   notify(`⚔️ 勝利！+${e.xp||0}EXP +${e.gold||0}G`, 'ok');
   _flashCard('cov-enemy','p-hit');
 
-  // 更新最近戰績
   if(typeof appendStory === 'function') {
     appendStory('reward', `⚔ 擊敗 ${e.name} → +${e.xp||0}EXP +${e.gold||0}G`);
   }
 
-  // 儲存獎勵到 server
   try {
     const res = await AC_API.soloReward(state.char.id, {
       xp:   e.xp   || 0,
@@ -889,15 +898,14 @@ async function _onVictory() {
 
   // 自動重複 (單人模式)
   if(_autoRunning) {
-    _autoDone++;
     _autoRemain = Math.max(0, _autoRemain-1);
+    _autoDone++;
     const doneEl = document.getElementById('cov-done');
     if(doneEl) doneEl.textContent = _autoDone;
     document.getElementById('cov-progress').style.display = 'flex';
     _txt('cov-total', _autoDone + _autoRemain);
 
     if(_autoRemain > 0) {
-      // ✅ 修復單人模式連戰會中斷的問題 (加上 true 參數)
       setTimeout(()=>{ if(_autoRunning && _currentMonster) openCombatOverlay(_currentMonster, true); }, 400);
     } else {
       _autoRunning = false;
@@ -934,10 +942,9 @@ function initCombatExtraSockets() {
 
   s.on('dungeon:countdown', ({ seconds }) => {
     let sec = seconds;
-    const btn = document.getElementById('mr-start-btn');
+    const btn = document.getElementById('cov-start-btn');
     if(btn) { btn.disabled = true; btn.textContent = `⏳ 戰鬥倒數 ${sec}...`; }
     
-    // 如果不是在連戰自動讀秒中，才顯示中央的彈出提示
     if (!_autoRunning) {
         notify(`⚔️ 戰鬥即將開始！倒數 ${sec} 秒...`, 'ok');
     }
@@ -949,7 +956,7 @@ function initCombatExtraSockets() {
         if(btn) btn.textContent = `⏳ 戰鬥倒數 ${sec}...`;
       } else {
         clearInterval(window._dungeonCdIntv);
-        if(btn) { btn.disabled = false; btn.textContent = '▶ 開始戰鬥！'; }
+        if(btn) { btn.disabled = false; btn.textContent = '▶ 戰鬥中'; }
       }
     }, 1000);
   });
@@ -1021,21 +1028,55 @@ function initCombatExtraSockets() {
       _txt('cov-total', count);
       _txt('cov-done', 0);
       document.getElementById('cov-progress').style.display='flex';
-      _txt('cov-start-btn','⏸ 暫停');
       _updateAutoLabel();
       if(state.combat?.myTurn) _schedulePlayer();
     } else {
       clearTimeout(_autoTimer);
-      _txt('cov-start-btn','▶ 繼續');
       _updateAutoLabel();
     }
   });
 
+  // ✅ 大幅重構：利用大廳原生的 room:update 機制來判定全員就緒
   s.on('room:update', ({ members, status }) => {
-    if(status === 'waiting') {
-      if(typeof renderMultiMembers === 'function') renderMultiMembers(members);
-    } else {
-      if(typeof renderMultiMembers === 'function') renderMultiMembers(members);
+    if(typeof renderMultiMembers === 'function') renderMultiMembers(members);
+
+    // 如果目前在多人模式且戰鬥已結束 (等候畫面)
+    const overlay = document.getElementById('combat-overlay');
+    if (overlay && overlay.classList.contains('active') && _combatMode === 'multi') {
+        if (status === 'waiting' && state.combat && !state.combat.active) {
+            
+            const me = members.find(m => Number(m.character_id) === Number(state.char.id));
+            const allReady = members.every(m => Number(m.is_leader)===1 || Number(m.is_ready)===1);
+
+            if (state.isLeader) {
+                if (allReady) {
+                    _txt('cov-start-btn', '▶ 全員就緒，開始戰鬥！');
+                    document.getElementById('cov-start-btn').onclick = startDungeon;
+                    
+                    // 房主如果在自動戰鬥中，且全員就緒，自動點擊開始
+                    if (_autoRunning && _autoRemain > 0) {
+                        setTimeout(() => { startDungeon(); }, 500);
+                    }
+                } else {
+                    const readyCount = members.filter(m => Number(m.is_ready)===1 || Number(m.is_leader)===1).length;
+                    _txt('cov-start-btn', `⏳ 等待隊友 (${readyCount}/${members.length})`);
+                    document.getElementById('cov-start-btn').onclick = null;
+                }
+            } else {
+                if (me && Number(me.is_ready)===1) {
+                    _txt('cov-start-btn', '✅ 已準備，等待房主');
+                    document.getElementById('cov-start-btn').onclick = toggleReady;
+                } else {
+                    _txt('cov-start-btn', '▶ 準備再戰');
+                    document.getElementById('cov-start-btn').onclick = toggleReady;
+                    
+                    // 隊員如果在自動戰鬥中，自動點擊準備
+                    if (_autoRunning && _autoRemain > 0) {
+                        setTimeout(() => { toggleReady(); }, 500);
+                    }
+                }
+            }
+        }
     }
   });
 
@@ -1055,14 +1096,9 @@ function initCombatExtraSockets() {
       const fleeBtn = document.querySelector('.cov-flee-btn');
       if(fleeBtn) { fleeBtn.innerHTML = '🚪 離開'; fleeBtn.onclick = () => { exitCombat(); leaveMultiRoom(); }; }
 
-      _txt('cov-start-btn', state.isLeader ? '▶ 發起再戰' : '⏳ 等待隊長...');
-
-      // 向後端請求最新資料，同步升級狀態
       if(AC_API && AC_API.getChar) {
          AC_API.getChar(state.char.id).then(updated => {
-             if(updated && updated.level > state.char.level) {
-                 notify('🎉 升級了！現在是 Lv.' + updated.level + '！', 'ok');
-             }
+             if(updated && updated.level > state.char.level) notify('🎉 升級了！現在是 Lv.' + updated.level + '！', 'ok');
              if(updated) {
                  updated.equipment = updated.equipment || state.char.equipment || [];
                  updated.learnedSkills = updated.learnedSkills || state.char.learnedSkills || {};
@@ -1073,8 +1109,8 @@ function initCombatExtraSockets() {
       }
 
     } else {
-      notify('☠ 全滅...2秒後返回房間', 'err');
-      _covLog('lose', '☠ 全滅。隊伍即將傳回大廳。');
+      notify('☠ 全滅...2秒後返回大廳', 'err');
+      _covLog('lose', '☠ 全滅。');
       _autoRunning = false;
       setTimeout(() => { exitCombat(); leaveMultiRoom(); }, 2000);
     }
@@ -1082,77 +1118,22 @@ function initCombatExtraSockets() {
 
   s.on('dungeon:completed', () => {
     if (!_autoRunning) notify('🏆 副本結束！', 'ok');
-    _covLog('win', '🏆 副本結束！');
+    _covLog('win', '🏆 副本結算完畢！');
 
-    // ✅ 修復多人模式連戰中斷的問題
     if (_combatMode === 'multi' && _autoRunning) {
-        if (state.isLeader) {
-           _autoRemain--;
-           _autoDone++;
-           _txt('cov-done', _autoDone);
-           _txt('cov-total', _autoDone + _autoRemain);
-           
-           if (_autoRemain > 0) {
-              _txt('cov-start-btn', '⏳ 自動發起再戰...');
-              // 發起下一輪投票/戰鬥
-              setTimeout(() => { state.socket.emit('combat:request_restart', { roomCode: state.roomCode }); }, 1000);
-           } else {
-              _autoRunning = false;
-              _updateAutoLabel();
-              state.socket.emit('combat:host_auto', { roomCode: state.roomCode, autoState: false, count: 0 });
-              _txt('cov-start-btn', '▶ 發起再戰');
-              notify('✦ 自動戰鬥完成！', 'ok');
-           }
-        } else {
-           _txt('cov-start-btn', '⏳ 自動等待隊長...');
+        _autoRemain = Math.max(0, _autoRemain - 1);
+        _autoDone++;
+        _txt('cov-done', _autoDone);
+        _txt('cov-total', _autoDone + _autoRemain);
+        
+        if (_autoRemain <= 0) {
+           _autoRunning = false;
+           _updateAutoLabel();
+           if(state.isLeader) state.socket.emit('combat:host_auto', { roomCode: state.roomCode, autoState: false, count: 0 });
+           notify('✦ 自動戰鬥完成！', 'ok');
         }
-    } else {
-        _txt('cov-start-btn', state.isLeader ? '▶ 發起再戰' : '⏳ 等待隊長...');
     }
-    // 這裡我們不呼叫 exitCombat()，讓畫面留在結算畫面等待下一步
+    // 這裡我們不呼叫 exitCombat()，讓畫面留在戰鬥結算頁面，由 room:update 接手再戰流程
   });
-
-  s.on('combat:restart_vote', ({ seconds }) => {
-    const btn = document.getElementById('cov-start-btn');
-    if(!btn) return;
-    let sec = seconds, voted = false;
-
-    const render = () => {
-      if(state.isLeader) {
-        btn.textContent = `⏳ 等待隊友 (${sec})`;
-        btn.disabled = true;
-      } else {
-        if(!voted) {
-          btn.textContent = `▶ 確認再戰 (${sec})`;
-          btn.disabled = false;
-          btn.onclick = () => {
-            voted = true; btn.disabled = true;
-            btn.textContent = `✅ 已確認 (${sec})`;
-            state.socket.emit('combat:vote_yes', { roomCode: state.roomCode });
-          };
-        } else {
-          btn.textContent = `✅ 已確認 (${sec})`;
-        }
-      }
-    };
-
-    if(window._voteCdIntv) clearInterval(window._voteCdIntv);
-    window._voteCdIntv = setInterval(() => {
-      sec--;
-      if(sec >= 0) render(); else clearInterval(window._voteCdIntv);
-    }, 1000);
-    render();
-
-    if(_autoRunning && !state.isLeader) {
-      setTimeout(() => {
-        if(!voted && state.combat && !state.combat.active) {
-          voted = true;
-          if(btn) { btn.disabled = true; btn.textContent = `✅ 已自動確認`; }
-          state.socket.emit('combat:vote_yes', { roomCode: state.roomCode });
-        }
-      }, 500); // 隊員自動確認加速
-    }
-  });
-
 }
 initCombatExtraSockets();
