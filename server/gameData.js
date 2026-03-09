@@ -7,34 +7,54 @@ const JOB_BASE = {
   priest:  { maxHp: 90,  maxMp: 100, stats: { STR:6,  INT:10, AGI:8,  WIS:16, DEF:9  } },
 };
 
+// ✅ 補齊所有職業的 9 招技能，並設定正確的 type (heal, magic, physical, holy)
 const JOB_SKILLS = {
-  mage:    [
-    { id:'basic_atk',  name:'魔法箭',   cost:0,  baseDmg:[4,8],   type:'magic',  heal:0 },
-    { id:'fireball',   name:'火球術',   cost:15, baseDmg:[10,18], type:'magic',  heal:0 },
-    { id:'frost',      name:'冰凍術',   cost:20, baseDmg:[8,14],  type:'magic',  heal:0, effect:'stun' },
-    { id:'arcane_burst',name:'魔力爆發',cost:30, baseDmg:[18,30], type:'magic',  heal:0 },
+  mage: [
+    {id:'basic_atk', name:'魔法箭', cost:0, baseDmg:[4,8], type:'magic'},
+    {id:'fireball', name:'火球術', cost:15, baseDmg:[10,18], type:'magic'},
+    {id:'frost', name:'冰凍術', cost:20, baseDmg:[8,14], type:'magic'},
+    {id:'magic_shield', name:'魔法護盾', cost:25, baseDmg:[0,0], type:'heal'},
+    {id:'arcane_burst', name:'魔力爆發', cost:30, baseDmg:[18,30], type:'magic'},
+    {id:'chain', name:'連鎖閃電', cost:25, baseDmg:[15,25], type:'magic'},
+    {id:'mana_drain', name:'魔力汲取', cost:10, baseDmg:[10,20], type:'magic'}, 
+    {id:'blizzard', name:'暴風雪', cost:35, baseDmg:[25,40], type:'magic'},
+    {id:'meteor', name:'隕石術', cost:40, baseDmg:[30,50], type:'magic'}
   ],
   warrior: [
-    { id:'basic_atk',  name:'普通攻擊', cost:0,  baseDmg:[6,12],  type:'physical', heal:0 },
-    { id:'heavy_blow', name:'重擊',     cost:10, baseDmg:[12,20], type:'physical', heal:0 },
-    { id:'shield_bash',name:'護盾衝鋒', cost:15, baseDmg:[8,14],  type:'physical', heal:0, effect:'stun' },
-    { id:'rage',       name:'狂怒',     cost:20, baseDmg:[16,28], type:'physical', heal:0 },
+    {id:'basic_atk', name:'普通攻擊', cost:0, baseDmg:[6,12], type:'physical'},
+    {id:'heavy_blow', name:'重擊', cost:10, baseDmg:[12,20], type:'physical'},
+    {id:'shield_bash', name:'護盾衝鋒', cost:15, baseDmg:[8,14], type:'physical'},
+    {id:'warcry', name:'戰吼', cost:15, baseDmg:[0,0], type:'heal'},
+    {id:'rage', name:'狂怒', cost:20, baseDmg:[16,28], type:'physical'},
+    {id:'taunt', name:'嘲諷', cost:10, baseDmg:[10,15], type:'physical'},
+    {id:'iron_skin', name:'鋼鐵之軀', cost:25, baseDmg:[0,0], type:'heal'},
+    {id:'counter', name:'反擊刃', cost:25, baseDmg:[20,35], type:'physical'},
+    {id:'earthquake', name:'裂地擊', cost:35, baseDmg:[30,45], type:'physical'}
   ],
-  rogue:   [
-    { id:'basic_atk',  name:'匕首刺',   cost:0,  baseDmg:[5,10],  type:'physical', heal:0 },
-    { id:'backstab',   name:'背刺',     cost:12, baseDmg:[14,22], type:'physical', heal:0, critBonus:0.3 },
-    { id:'poison_mist',name:'毒霧',     cost:18, baseDmg:[5,8],   type:'magic',    heal:0, effect:'poison', poisonDmg:8 },
-    { id:'shadow_step',name:'暗影步',   cost:25, baseDmg:[20,32], type:'physical', heal:0 },
+  rogue: [
+    {id:'basic_atk', name:'匕首刺', cost:0, baseDmg:[5,10], type:'physical'},
+    {id:'backstab', name:'背刺', cost:12, baseDmg:[14,22], type:'physical', critBonus:0.3},
+    {id:'poison_mist', name:'毒霧', cost:18, baseDmg:[8,15], type:'magic'},
+    {id:'evade', name:'殘影步', cost:15, baseDmg:[0,0], type:'heal'},
+    {id:'shadow_step', name:'暗影擊', cost:25, baseDmg:[20,32], type:'physical'},
+    {id:'smoke', name:'煙霧彈', cost:20, baseDmg:[15,25], type:'physical'},
+    {id:'lifesteal', name:'吸血刃', cost:25, baseDmg:[0,0], type:'heal'},
+    {id:'trap', name:'陷阱術', cost:25, baseDmg:[18,35], type:'physical'},
+    {id:'assassin', name:'瞬殺', cost:35, baseDmg:[40,60], type:'physical', critBonus:0.3}
   ],
-  priest:  [
-    { id:'basic_atk',  name:'神聖打擊', cost:0,  baseDmg:[4,8],   type:'holy',   heal:0 },
-    { id:'holy_smite', name:'神聖爆擊', cost:15, baseDmg:[10,18], type:'holy',   heal:0 },
-    { id:'heal',       name:'治癒術',   cost:20, baseDmg:[0,0],   type:'heal',   heal:30 },
-    { id:'divine_wrath',name:'神罰',    cost:30, baseDmg:[16,26], type:'holy',   heal:0 },
-  ],
+  priest: [
+    {id:'basic_atk', name:'神聖打擊', cost:0, baseDmg:[4,8], type:'holy'},
+    {id:'holy_smite', name:'神聖爆擊', cost:15, baseDmg:[10,18], type:'holy'},
+    {id:'heal', name:'治癒術', cost:20, baseDmg:[0,0], type:'heal'},
+    {id:'bless', name:'聖光祝福', cost:20, baseDmg:[0,0], type:'heal'},
+    {id:'divine_wrath', name:'神罰', cost:30, baseDmg:[16,26], type:'holy'},
+    {id:'revive', name:'大治癒術', cost:40, baseDmg:[0,0], type:'heal'},
+    {id:'purify', name:'淨化之光', cost:25, baseDmg:[15,25], type:'holy'},
+    {id:'barrier', name:'神聖護盾', cost:30, baseDmg:[0,0], type:'heal'},
+    {id:'smite', name:'神聖審判', cost:35, baseDmg:[25,45], type:'holy'}
+  ]
 };
 
-// ✅ 同步與前端一模一樣的所有怪物數值
 const ENEMIES = {
   slime:        { id:'slime',        name:'史萊姆',   icon:'🟢', level:1, hp:30,   atk:[3,6],    def:0,  xp:10,   gold:5,   loot:'史萊姆核心' },
   goblin:       { id:'goblin',       name:'哥布林',   icon:'👺', level:2, hp:45,   atk:[5,9],    def:1,  xp:18,   gold:8,   loot:'哥布林耳環' },
