@@ -1,9 +1,6 @@
 // ════════════════════════════════════════════
-//  TOWNS & MONSTERS DATA
+//  TOWNS & MONSTERS DATA  (JOB_NAMES / JOB_ICONS 已在 game-data.js 宣告)
 // ════════════════════════════════════════════
-const JOB_NAMES = { warrior:'勇者', mage:'法師', rogue:'盜賊', priest:'聖職者' };
-const JOB_ICONS = { warrior:'⚔️', mage:'🔮', rogue:'🗡️', priest:'✨' };
-
 const TOWNS = [
   {
     id:'forest', name:'新手森林', icon:'🌲', lvReq:1, color:'#2d5a27',
