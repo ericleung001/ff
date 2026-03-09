@@ -6,10 +6,10 @@ const { authMiddleware } = require('./auth');
 const router = express.Router();
 router.use(authMiddleware);
 
-// ── POST /api/dungeons/rooms — create room ────────────────
 router.post('/rooms', async (req, res) => {
   try {
-    const { characterId, dungeonId = 1, maxPlayers = 4, isPrivate = false, title = '' } = req.body;
+    // ✅ 接收 targetMonster
+    const { characterId, dungeonId = 1, maxPlayers = 4, isPrivate = false, title = '', targetMonster = 'goblin' } = req.body;
 
     const char = await queryOne(
       'SELECT id, name FROM characters WHERE id=? AND user_id=?',
@@ -25,10 +25,11 @@ router.post('/rooms', async (req, res) => {
 
     const roomTitle = title.trim().slice(0, 40) || `${char.name} 的房間`;
 
+    // ✅ 將 target_monster 寫入資料表
     const r = await execute(
-      `INSERT INTO dungeon_rooms (room_code, dungeon_id, max_players, is_private, room_title, created_by)
-       VALUES (?,?,?,?,?,?)`,
-      [code, dungeonId, maxPlayers, isPrivate ? 1 : 0, roomTitle, characterId]
+      `INSERT INTO dungeon_rooms (room_code, dungeon_id, max_players, is_private, room_title, created_by, target_monster)
+       VALUES (?,?,?,?,?,?,?)`,
+      [code, dungeonId, maxPlayers, isPrivate ? 1 : 0, roomTitle, characterId, targetMonster]
     );
 
     await execute(
@@ -44,7 +45,6 @@ router.post('/rooms', async (req, res) => {
   }
 });
 
-// ── POST /api/dungeons/rooms/join — join by code ──────────
 router.post('/rooms/join', async (req, res) => {
   try {
     const { roomCode, characterId } = req.body;
@@ -85,7 +85,6 @@ router.post('/rooms/join', async (req, res) => {
   }
 });
 
-// ── GET /api/dungeons/rooms/:code — room details ──────────
 router.get('/rooms/:code', async (req, res) => {
   const room = await queryOne(
     'SELECT * FROM dungeon_rooms WHERE room_code=?', [req.params.code.toUpperCase()]
@@ -103,7 +102,6 @@ router.get('/rooms/:code', async (req, res) => {
   res.json({ ...room, members });
 });
 
-// ── GET /api/dungeons/rooms — list open PUBLIC rooms ──────
 router.get('/rooms', async (req, res) => {
   const rooms = await query(
     `SELECT dr.*, 
@@ -118,7 +116,6 @@ router.get('/rooms', async (req, res) => {
   res.json(rooms);
 });
 
-// ── PATCH /api/dungeons/rooms/:id/ready ───────────────────
 router.patch('/rooms/:id/ready', async (req, res) => {
   const { characterId } = req.body;
   await execute(
