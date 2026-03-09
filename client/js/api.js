@@ -43,7 +43,7 @@ const updateStory   = (id, idx)     => api('PATCH', `/api/characters/${id}/story
 const soloReward    = (id, data)    => api('POST',  `/api/characters/${id}/solo-reward`, data);
 const saveHpMp      = (id, hp, mp) => api('POST',  `/api/characters/${id}/save-hp`, { hp, mp });
 
-// ✅ 修改：將 extra 裡的 targetMonster 提取並送出
+// ✅ 確保 extra 裡的 targetMonster 被正確傳給後端
 const createRoom    = (characterId, dungeonId=1, maxPlayers=4, isPrivate=false, title='', extra={}) =>
   api('POST', '/api/dungeons/rooms', { characterId, dungeonId, maxPlayers, isPrivate, title, targetMonster: extra.targetMonster });
 const joinRoom      = (roomCode, characterId)  => api('POST', '/api/dungeons/rooms/join', { roomCode, characterId });
