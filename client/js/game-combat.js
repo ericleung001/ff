@@ -217,7 +217,7 @@ async function doCreateMultiRoom() {
     state.roomCode = String(r.roomCode).toUpperCase();
     state.roomId = r.roomId;
     state.isLeader = true;
-    _showRoomView(state.roomCode,title||state.roomCode,priv,minLv,jobs);
+    _showRoomView(state.roomCode,title||state.roomCode,priv,minLv,jobs, _createMonster.id);
     joinRoomSocket(state.roomCode);
     notify('房間創建成功！','ok');
   } catch(e){ notify(e.message,'err'); }
@@ -232,7 +232,7 @@ async function doJoinMultiRoom() {
     state.roomCode = String(r.roomCode).toUpperCase();
     state.roomId = r.roomId;
     state.isLeader = false;
-    _showRoomView(state.roomCode,info.room_title||code,!!info.is_private,info.min_level,info.required_jobs);
+    _showRoomView(state.roomCode,info.room_title||code,!!info.is_private,info.min_level,info.required_jobs, info.target_monster);
     joinRoomSocket(state.roomCode);
   } catch(e){ notify(e.message,'err'); }
 }
@@ -247,6 +247,14 @@ async function refreshMultiRooms() {
       const tags=[];
       if(r.min_level) tags.push(`Lv.${r.min_level}+`);
       if(r.required_jobs?.length) tags.push(...r.required_jobs.map(j=>JOB_NAMES[j]||j));
+      
+      // ✅ 在大廳列表顯示房間要打的怪物
+      if(r.target_monster) {
+          let mName = r.target_monster;
+          for(const t of TOWNS) { const m = t.monsters.find(x=>x.id===r.target_monster); if(m){ mName = m.name; break; } }
+          tags.push(`🎯 ${mName}`);
+      }
+
       const tagHtml=tags.length?`<div class="room-tags">${tags.map(t=>`<span class="room-tag req">${t}</span>`).join('')}</div>`:'';
       return `<div class="room-card"><div>
         <div class="room-code">${r.room_title||r.room_code}</div>
@@ -265,23 +273,42 @@ async function quickJoinMulti(code) {
     state.roomCode = String(r.roomCode).toUpperCase();
     state.roomId = r.roomId;
     state.isLeader = false;
-    _showRoomView(state.roomCode,info.room_title||code,!!info.is_private,info.min_level,info.required_jobs);
+    _showRoomView(state.roomCode,info.room_title||code,!!info.is_private,info.min_level,info.required_jobs, info.target_monster);
     joinRoomSocket(state.roomCode);
   } catch(e){ notify(e.message,'err'); }
 }
 
-function _showRoomView(code,title,isPrivate,minLv,jobs) {
+function _showRoomView(code, title, isPrivate, minLv, jobs, targetMonsterId) {
   const tab=document.getElementById('mtab-room'); if(tab) tab.style.display='';
   setMultiTab('room');
   const _t=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
   _t('mr-code',code); _t('mr-title-lbl',title||code);
   const pb=document.getElementById('mr-privacy-badge'); if(pb) pb.textContent=isPrivate?'🔒 私人':'🌐 公開';
+  
   const rqs=document.getElementById('mr-reqs');
-  if(rqs){ const tags=[]; if(minLv) tags.push(`Lv.${minLv}+`); if(jobs?.length) tags.push(...jobs.map(j=>JOB_NAMES[j]||j)); rqs.innerHTML=tags.map(t=>`<span class="room-tag req">${t}</span>`).join(''); }
+  if(rqs){ 
+      const tags=[]; 
+      if(minLv) tags.push(`Lv.${minLv}+`); 
+      if(jobs?.length) tags.push(...jobs.map(j=>JOB_NAMES[j]||j)); 
+      let html = tags.map(t=>`<span class="room-tag req">${t}</span>`).join(''); 
+
+      // ✅ 顯示目前房間準備要打的怪物名稱與等級
+      if (targetMonsterId) {
+          let mName = targetMonsterId, mType = '';
+          for(const t of TOWNS) {
+              const m = t.monsters.find(x => x.id === targetMonsterId);
+              if(m) { mName = m.name; mType = m.type; break; }
+          }
+          html += `<span class="room-tag" style="border-color:var(--red);color:var(--red)">🎯 目標：${mName} (${mType})</span>`;
+      }
+      rqs.innerHTML = html;
+  }
+  
   const startBtn = document.getElementById('mr-start-btn');
   if(startBtn) {
     startBtn.classList.toggle('hide', !state.isLeader);
     startBtn.textContent = '▶ 等待準備...';
+    startBtn.disabled = false;
     startBtn.style.opacity = '0.5';
   }
   _refreshRoomMembers();
@@ -321,8 +348,11 @@ function renderMultiMembers(members) {
 
     const allReady = members.every(m => Number(m.is_leader)===1 || Number(m.is_ready)===1);
     if(startBtn) {
-      startBtn.textContent = allReady ? '▶ 全員準備，開始！' : '▶ 等待準備...';
-      startBtn.style.opacity = allReady ? '1' : '0.5';
+      // 如果不是在倒數中，才設定狀態，免得覆蓋掉「倒數 N 秒」的文字
+      if (!startBtn.disabled) {
+          startBtn.textContent = allReady ? '▶ 全員準備，開始！' : '▶ 等待準備...';
+          startBtn.style.opacity = allReady ? '1' : '0.5';
+      }
     }
   } else {
     if(startBtn) startBtn.classList.add('hide'); 
@@ -381,7 +411,6 @@ function applyCombatUIVisibility() {
   if (autoBar)   autoBar.style.display   = 'flex';
   if (bottomBar) bottomBar.style.display = 'flex';
 
-  // ✅ BUG FIX: 非房主無法修改自動次數
   const countInp = document.getElementById('cov-count');
   if (countInp) {
     countInp.disabled = (_combatMode === 'multi' && !state.isLeader);
@@ -466,7 +495,7 @@ function openMultiCombatOverlay(floor, enemies, party) {
   } else {
       _txt('cov-start-btn', _autoRunning ? '⚔️ 房主自動中' : '⏳ 戰鬥中...');
       startBtn.onclick = null;
-      startBtn.disabled = true; // ✅ BUG FIX: 戰鬥中非房主無法點擊
+      startBtn.disabled = true;
   }
 
   const fleeBtn = document.querySelector('.cov-flee-btn');
@@ -514,7 +543,6 @@ function _startRound(monsterData) {
 }
 
 function toggleCombatAuto() {
-  // ✅ BUG FIX: 嚴格禁止非房主在多人模式觸發自動戰鬥控制
   if (_combatMode === 'multi' && !state.isLeader) return;
 
   if(!state.combat?.active) {
@@ -965,19 +993,29 @@ function initCombatExtraSockets() {
   _combatExtraSocketBound = true;
   const s = state.socket;
 
+  // ✅ BUG FIX: 確保戰鬥倒數同步更新到正確的按鈕
   s.on('dungeon:countdown', ({ seconds }) => {
     let sec = seconds;
-    const btn = document.getElementById('cov-start-btn');
-    if(btn) { btn.disabled = true; btn.textContent = `⏳ 戰鬥倒數 ${sec}...`; }
+    const btnCov = document.getElementById('cov-start-btn');
+    const btnMr = document.getElementById('mr-start-btn');
     
+    if(btnCov) { btnCov.disabled = true; btnCov.textContent = `⏳ 戰鬥倒數 ${sec}...`; }
+    if(btnMr && !btnMr.classList.contains('hide')) { btnMr.disabled = true; btnMr.textContent = `⏳ 全員準備，開始！ (${sec})`; }
+    
+    if (!_autoRunning) {
+        notify(`⚔️ 戰鬥即將開始！倒數 ${sec} 秒...`, 'ok');
+    }
+
     if (window._dungeonCdIntv) clearInterval(window._dungeonCdIntv);
     window._dungeonCdIntv = setInterval(() => {
       sec--;
       if(sec > 0) {
-        if(btn) btn.textContent = `⏳ 戰鬥倒數 ${sec}...`;
+        if(btnCov) btnCov.textContent = `⏳ 戰鬥倒數 ${sec}...`;
+        if(btnMr && !btnMr.classList.contains('hide')) btnMr.textContent = `⏳ 全員準備，開始！ (${sec})`;
       } else {
         clearInterval(window._dungeonCdIntv);
-        if(btn) { btn.disabled = false; btn.textContent = '▶ 戰鬥中'; }
+        if(btnCov) { btnCov.disabled = false; btnCov.textContent = '▶ 戰鬥中'; }
+        if(btnMr) { btnMr.disabled = false; btnMr.textContent = '▶ 戰鬥中'; }
       }
     }, 1000);
   });
