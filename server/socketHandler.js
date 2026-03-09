@@ -8,7 +8,7 @@ const TURN_TIMEOUT_MS = parseInt(process.env.DUNGEON_TURN_TIMEOUT) || 30000;
 
 const activeSessions = new Map();
 const socketIndex = new Map();
-const activeVotes = new Map();
+const activeVotes = new Map(); 
 
 module.exports = function initSockets(io) {
 
@@ -199,92 +199,6 @@ module.exports = function initSockets(io) {
       }
     });
 
-    socket.on('combat:request_restart', async ({ roomCode }) => {
-      roomCode = String(roomCode).toUpperCase();
-      const info = socketIndex.get(socket.id);
-      if (!info || info.roomCode !== roomCode) return;
-      const room = await queryOne('SELECT * FROM dungeon_rooms WHERE room_code=?', [roomCode]);
-      if (!room || room.status !== 'waiting') return;
-
-      const isLeader = await queryOne('SELECT id FROM room_members WHERE room_id=? AND character_id=? AND (is_leader=1 OR is_leader=TRUE)', [room.id, info.characterId]);
-      if (!isLeader) return;
-
-      const members = await getRoomMembers(room.id);
-      
-      // 單人直接秒開
-      if (members.length <= 1) {
-          await execute('UPDATE room_members SET is_ready=TRUE WHERE room_id=? AND character_id=?', [room.id, info.characterId]);
-          io.to(roomCode).emit('room:update', { members, status: 'waiting' });
-          io.to(roomCode).emit('dungeon:countdown', { seconds: 5 });
-          setTimeout(async () => {
-            const finalMembers = await getRoomMembers(room.id);
-            await startDungeon(io, room, finalMembers, roomCode);
-          }, 5000);
-          return;
-      }
-
-      // 等待隊友
-      const timeoutId = setTimeout(async () => {
-        const voteData = activeVotes.get(roomCode);
-        if (!voteData) return;
-        activeVotes.delete(roomCode);
-
-        const currentMembers = await getRoomMembers(room.id);
-        for (const m of currentMembers) {
-          if (!voteData.yesVotes.has(m.character_id)) {
-            await kickMember(room, m.character_id, '未確認再戰，已離開隊伍');
-          } else {
-            await execute('UPDATE room_members SET is_ready=TRUE WHERE room_id=? AND character_id=?', [room.id, m.character_id]);
-          }
-        }
-
-        const finalMembers = await getRoomMembers(room.id);
-        if (finalMembers.length > 0) {
-          io.to(roomCode).emit('room:update', { members: finalMembers, status: 'waiting' });
-          io.to(roomCode).emit('dungeon:countdown', { seconds: 5 });
-          setTimeout(async () => {
-            await startDungeon(io, room, finalMembers, roomCode);
-          }, 5000);
-        }
-      }, 10000);
-
-      activeVotes.set(roomCode, {
-        room: room,
-        yesVotes: new Set([info.characterId]),
-        timeout: timeoutId
-      });
-
-      io.to(roomCode).emit('combat:restart_vote', { seconds: 10 });
-    });
-
-    socket.on('combat:vote_yes', async ({ roomCode }) => {
-      roomCode = String(roomCode).toUpperCase();
-      const info = socketIndex.get(socket.id);
-      if (!info || info.roomCode !== roomCode) return;
-      
-      const voteData = activeVotes.get(roomCode);
-      if (voteData) {
-        voteData.yesVotes.add(info.characterId);
-        
-        const members = await getRoomMembers(voteData.room.id);
-        if (voteData.yesVotes.size >= members.length) {
-            clearTimeout(voteData.timeout);
-            activeVotes.delete(roomCode);
-            
-            for (const m of members) {
-              await execute('UPDATE room_members SET is_ready=TRUE WHERE room_id=? AND character_id=?', [voteData.room.id, m.character_id]);
-            }
-            
-            const finalMembers = await getRoomMembers(voteData.room.id);
-            io.to(roomCode).emit('room:update', { members: finalMembers, status: 'waiting' });
-            io.to(roomCode).emit('dungeon:countdown', { seconds: 5 });
-            setTimeout(async () => {
-              await startDungeon(io, voteData.room, finalMembers, roomCode);
-            }, 5000);
-        }
-      }
-    });
-
     socket.on('combat:action', async ({ roomCode, skillId, targetIdx = 0 }) => {
       roomCode = String(roomCode).toUpperCase();
       const info = socketIndex.get(socket.id);
@@ -314,8 +228,8 @@ module.exports = function initSockets(io) {
     setTimeout(() => spawnFloor(io, room, members, roomCode, 1), 1000);
   }
 
-  // ✅ BUG FIX: 讀取資料庫的 target_monster 欄位來生成真正的目標怪物
   async function spawnFloor(io, room, members, roomCode, floor) {
+    // ✅ 讀取資料庫裡的目標怪物，找不到才給預設值
     const targetId = room.target_monster || 'goblin';
     const base = ENEMIES && ENEMIES[targetId] ? ENEMIES[targetId] : { name: '未知怪物', icon: '👹', hp: 100, atk: [5,10], def: 2, xp: 20, gold: 10 };
     const enemies = [{ ...base, currentHp: base.hp, statusEffects: [] }];
@@ -577,6 +491,10 @@ module.exports = function initSockets(io) {
        FROM room_members rm JOIN characters c ON c.id=rm.character_id
        WHERE rm.room_id=?`, [roomId]
     );
+  }
+
+  function getFloorEnemies(dungeonId, floor) {
+    return ['goblin']; 
   }
 
   function addLog(session, type, msg) {
