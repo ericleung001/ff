@@ -219,7 +219,6 @@ async function doCreateMultiRoom() {
     state.isLeader = true;
     _showRoomView(state.roomCode,title||state.roomCode,priv,minLv,jobs, _createMonster.id);
     joinRoomSocket(state.roomCode);
-    notify('房間創建成功！','ok');
   } catch(e){ notify(e.message,'err'); }
 }
 
@@ -248,7 +247,6 @@ async function refreshMultiRooms() {
       if(r.min_level) tags.push(`Lv.${r.min_level}+`);
       if(r.required_jobs?.length) tags.push(...r.required_jobs.map(j=>JOB_NAMES[j]||j));
       
-      // ✅ 在大廳列表顯示房間要打的怪物
       if(r.target_monster) {
           let mName = r.target_monster;
           for(const t of TOWNS) { const m = t.monsters.find(x=>x.id===r.target_monster); if(m){ mName = m.name; break; } }
@@ -292,7 +290,6 @@ function _showRoomView(code, title, isPrivate, minLv, jobs, targetMonsterId) {
       if(jobs?.length) tags.push(...jobs.map(j=>JOB_NAMES[j]||j)); 
       let html = tags.map(t=>`<span class="room-tag req">${t}</span>`).join(''); 
 
-      // ✅ 顯示目前房間準備要打的怪物名稱與等級
       if (targetMonsterId) {
           let mName = targetMonsterId, mType = '';
           for(const t of TOWNS) {
@@ -348,7 +345,6 @@ function renderMultiMembers(members) {
 
     const allReady = members.every(m => Number(m.is_leader)===1 || Number(m.is_ready)===1);
     if(startBtn) {
-      // 如果不是在倒數中，才設定狀態，免得覆蓋掉「倒數 N 秒」的文字
       if (!startBtn.disabled) {
           startBtn.textContent = allReady ? '▶ 全員準備，開始！' : '▶ 等待準備...';
           startBtn.style.opacity = allReady ? '1' : '0.5';
@@ -695,7 +691,6 @@ function _updateMultiCombatUI() {
   if (myChar) { state.char.hp = myChar.hp; state.char.mp = myChar.mp; state.char.maxHp = myChar.maxHp; state.char.maxMp = myChar.maxMp; }
   _refreshUI();
 
-  // 多人陣容條
   const partyHps = document.getElementById('c-party-hps');
   if(partyHps) {
     partyHps.innerHTML = _multiCombatState.party.map(p=>{
@@ -747,16 +742,39 @@ function useSoloCombatSkill(skillId, mpCost) {
   _executeSkillEffect(c, e, chosen);
 }
 
-function useCombatSkillMulti(skillId, mpCost) {
+// ✅ 手動點擊補血技能時，自動尋找血量最低的目標
+function useCombatSkillMulti(skillId, mpCost, targetIdx = -1) {
   if(state.socket && state.roomCode) {
+    let actualTarget = targetIdx;
+    
+    if (actualTarget === -1) {
+      actualTarget = 0;
+      const isHeal = ['heal','revive','bless','barrier','shield','skin','evade','lifesteal','warcry'].some(k => skillId.includes(k));
+      if (isHeal && _multiCombatState && _multiCombatState.party) {
+         if (state.char.job === 'priest') {
+             let lowestHpRatio = 1.0;
+             _multiCombatState.party.forEach((p, idx) => {
+                 const ratio = p.hp / p.maxHp;
+                 if (ratio < lowestHpRatio && p.hp > 0) {
+                     lowestHpRatio = ratio;
+                     actualTarget = idx;
+                 }
+             });
+         } else {
+             const myIdx = _multiCombatState.party.findIndex(p => Number(p.characterId) === Number(state.char.id));
+             if (myIdx !== -1) actualTarget = myIdx;
+         }
+      }
+    }
+    
     state.combat.myTurn = false;
     renderCombatSkills(false, true);
-    state.socket.emit('combat:action', { roomCode: state.roomCode, skillId, targetIdx: 0 });
+    state.socket.emit('combat:action', { roomCode: state.roomCode, skillId, targetIdx: actualTarget });
   }
 }
 
 // ════════════════════════════════════════════
-//  AUTO BATTLE ENGINE
+//  AUTO BATTLE ENGINE (✅ 自動尋找補血目標與技能)
 // ════════════════════════════════════════════
 function _schedulePlayer() {
   if(!_autoRunning || !state.combat?.active) return;
@@ -775,24 +793,67 @@ function _doPlayerTurn() {
 
   const c = state.char;
   const skills = typeof window.getEquippedSkills === 'function' ? window.getEquippedSkills(c) : [];
-  const healSk = skills.find(s => s && (s.id==='heal' || s.id.includes('heal') || s.id==='revive'));
-  let chosen   = skills[0];
+  
+  let needsHeal = false;
+  let targetIdx = 0; 
+  let lowestHpRatio = 1.0;
 
-  const hpRatio = _hp() / _mhp();
-  if(healSk && hpRatio < 0.4 && _mp() >= healSk.cost) {
-    chosen = healSk;
+  // 1. 智能掃描：聖職者找全隊，其他人只看自己
+  if (_combatMode === 'multi') {
+      if (c.job === 'priest') {
+          _multiCombatState.party.forEach((p, idx) => {
+              const ratio = p.hp / p.maxHp;
+              if (ratio <= 0.6 && ratio < lowestHpRatio && p.hp > 0) {
+                  needsHeal = true;
+                  lowestHpRatio = ratio;
+                  targetIdx = idx;
+              }
+          });
+      } else {
+          const myIdx = _multiCombatState.party.findIndex(p => Number(p.characterId) === Number(c.id));
+          if (myIdx !== -1) {
+              const myP = _multiCombatState.party[myIdx];
+              if (myP.hp / myP.maxHp <= 0.4) { // 其他職業 40% 才補自己
+                  needsHeal = true;
+                  targetIdx = myIdx;
+              }
+          }
+      }
   } else {
-    let best = null;
-    for(const sk of skills) {
-      if(!sk) continue;
-      if(sk.id==='heal'||sk.id.includes('heal')||sk.id==='revive') continue;
-      if(_mp() >= sk.cost) best = sk;
-    }
-    chosen = best || skills[0];
+      if (_hp() / _mhp() <= 0.5) {
+          needsHeal = true;
+      }
   }
 
+  let chosen = skills[0];
+  let isHealSkill = false;
+
+  // 2. 如果有人缺血，尋找已裝備中最強的補血技能
+  if (needsHeal) {
+      const healSkills = skills.filter(s => s && (s.id.includes('heal') || s.id === 'revive' || s.id === 'bless' || s.id === 'barrier' || ['magic_shield','warcry','iron_skin','evade','lifesteal'].includes(s.id)));
+      if (healSkills.length > 0) {
+          const availableHeals = healSkills.filter(s => _mp() >= s.cost).sort((a,b) => b.cost - a.cost);
+          if (availableHeals.length > 0) {
+              chosen = availableHeals[0];
+              isHealSkill = true;
+          }
+      }
+  }
+
+  // 3. 如果不需要補血 (或沒 MP)，就找最強攻擊
+  if (!isHealSkill) {
+      let best = null;
+      for(const sk of skills) {
+        if(!sk) continue;
+        if(sk.id.includes('heal') || sk.id==='revive' || sk.id==='bless' || sk.id==='barrier' || ['magic_shield','warcry','iron_skin','evade','lifesteal'].includes(sk.id)) continue;
+        if(_mp() >= sk.cost) best = sk;
+      }
+      chosen = best || skills[0];
+  }
+
+  // 4. 執行
   if(_combatMode === 'multi') {
-    useCombatSkillMulti(chosen.id, chosen.cost);
+    useCombatSkillMulti(chosen.id, chosen.cost, isHealSkill ? targetIdx : 0);
   } else {
     state.char.mp = Math.max(0, _mp() - (chosen.cost||0));
     _executeSkillEffect(c, state.combat.enemy, chosen);
@@ -993,7 +1054,6 @@ function initCombatExtraSockets() {
   _combatExtraSocketBound = true;
   const s = state.socket;
 
-  // ✅ BUG FIX: 確保戰鬥倒數同步更新到正確的按鈕
   s.on('dungeon:countdown', ({ seconds }) => {
     let sec = seconds;
     const btnCov = document.getElementById('cov-start-btn');
@@ -1001,10 +1061,6 @@ function initCombatExtraSockets() {
     
     if(btnCov) { btnCov.disabled = true; btnCov.textContent = `⏳ 戰鬥倒數 ${sec}...`; }
     if(btnMr && !btnMr.classList.contains('hide')) { btnMr.disabled = true; btnMr.textContent = `⏳ 全員準備，開始！ (${sec})`; }
-    
-    if (!_autoRunning) {
-        notify(`⚔️ 戰鬥即將開始！倒數 ${sec} 秒...`, 'ok');
-    }
 
     if (window._dungeonCdIntv) clearInterval(window._dungeonCdIntv);
     window._dungeonCdIntv = setInterval(() => {
