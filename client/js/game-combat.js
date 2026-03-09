@@ -382,20 +382,32 @@ function applyCombatUIVisibility() {
 // ════════════════════════════════════════════
 //  COMBAT OVERLAY — SOLO
 // ════════════════════════════════════════════
-function openCombatOverlay(monsterData) {
+function openCombatOverlay(monsterData, isAutoRepeat = false) {
   if(!state.char) return;
   _combatMode     = 'solo';
   _currentMonster = monsterData;
-  _roundNum = 0; _autoRunning = false; _autoDone = 0;
+  _roundNum = 0; 
+  
+  if (!isAutoRepeat) {
+    _autoRunning = false; 
+    _autoDone = 0;
+  }
 
   applyCombatUIVisibility();
 
-  document.getElementById('cov-progress').style.display='none';
-  _txt('cov-start-btn','▶ 開始戰鬥');
+  const prog = document.getElementById('cov-progress');
+  if (prog) prog.style.display = _autoRunning ? 'flex' : 'none';
+  
+  _txt('cov-start-btn', _autoRunning ? '⏸ 暫停' : '▶ 開始戰鬥');
   const fleeBtn = document.querySelector('.cov-flee-btn');
   if(fleeBtn) { fleeBtn.innerHTML = '⚡ 逃跑'; fleeBtn.onclick = doFlee; }
   document.getElementById('combat-overlay')?.classList.add('active');
+  
   _startRound(monsterData);
+
+  if (isAutoRepeat && _autoRunning) {
+    _schedulePlayer();
+  }
 }
 
 // ════════════════════════════════════════════
@@ -403,8 +415,13 @@ function openCombatOverlay(monsterData) {
 // ════════════════════════════════════════════
 function openMultiCombatOverlay(floor, enemies, party) {
   if(!state.char) return;
-  _roundNum = 0; _autoRunning = false; _autoDone = 0; _autoRemain = 0;
+  _roundNum = 0; 
   _combatMode = 'multi';
+  
+  if (!_autoRunning) {
+     _autoDone = 0; 
+     _autoRemain = 0;
+  }
 
   _multiCombatState = {
     enemies: enemies || [],
@@ -419,8 +436,10 @@ function openMultiCombatOverlay(floor, enemies, party) {
   const firstEnemy = enemies?.[0] || { name:'未知敵人', icon:'👹', maxHp:100, currentHp:100 };
   _currentMonster = null;
 
-  const prog=document.getElementById('cov-progress'); if(prog) prog.style.display='none';
-  _txt('cov-start-btn','⏳ 等待出手...');
+  const prog=document.getElementById('cov-progress'); 
+  if(prog) prog.style.display = _autoRunning ? 'flex' : 'none';
+  
+  _txt('cov-start-btn', _autoRunning ? '⏸ 暫停' : '⏳ 等待出手...');
   const fleeBtn = document.querySelector('.cov-flee-btn');
   if(fleeBtn) { fleeBtn.innerHTML = '⚡ 逃跑'; fleeBtn.onclick = doFlee; }
 
@@ -486,8 +505,7 @@ function toggleCombatAuto() {
       return;
     }
     
-    if(_currentMonster) openCombatOverlay(_currentMonster);
-    _schedulePlayer();
+    if(_currentMonster) openCombatOverlay(_currentMonster, true);
     return;
   }
 
@@ -844,7 +862,6 @@ async function _onVictory() {
       hp:   state.char.hp,
       mp:   state.char.mp
     });
-    // server 返回 { character: {...}, leveledUp: bool }
     const updated = res?.character || res;
     if(updated && updated.id && updated.name && updated.job) {
       updated.equipment     = updated.equipment     || state.char.equipment     || [];
@@ -870,7 +887,7 @@ async function _onVictory() {
     fleeBtn.onclick = () => exitCombat();
   }
 
-  // 自動重複
+  // 自動重複 (單人模式)
   if(_autoRunning) {
     _autoDone++;
     _autoRemain = Math.max(0, _autoRemain-1);
@@ -880,7 +897,8 @@ async function _onVictory() {
     _txt('cov-total', _autoDone + _autoRemain);
 
     if(_autoRemain > 0) {
-      setTimeout(()=>{ if(_autoRunning && _currentMonster) openCombatOverlay(_currentMonster); }, 400);
+      // ✅ 修復單人模式連戰會中斷的問題 (加上 true 參數)
+      setTimeout(()=>{ if(_autoRunning && _currentMonster) openCombatOverlay(_currentMonster, true); }, 400);
     } else {
       _autoRunning = false;
       _autoRemain = 0;
@@ -918,7 +936,11 @@ function initCombatExtraSockets() {
     let sec = seconds;
     const btn = document.getElementById('mr-start-btn');
     if(btn) { btn.disabled = true; btn.textContent = `⏳ 戰鬥倒數 ${sec}...`; }
-    notify(`⚔️ 戰鬥即將開始！倒數 ${sec} 秒...`, 'ok');
+    
+    // 如果不是在連戰自動讀秒中，才顯示中央的彈出提示
+    if (!_autoRunning) {
+        notify(`⚔️ 戰鬥即將開始！倒數 ${sec} 秒...`, 'ok');
+    }
 
     if (window._dungeonCdIntv) clearInterval(window._dungeonCdIntv);
     window._dungeonCdIntv = setInterval(() => {
@@ -955,7 +977,7 @@ function initCombatExtraSockets() {
       }
 
       if (_autoRunning && isMyTurn) _schedulePlayer();
-      notify('⚔️ 戰鬥正式開始！', 'ok');
+      if (!_autoRunning) notify('⚔️ 戰鬥正式開始！', 'ok');
     }, 150);
   });
 
@@ -1026,7 +1048,7 @@ function initCombatExtraSockets() {
   s.on('combat:end', ({ result, rewards }) => {
     state.combat.active = false;
     if(result === 'victory') {
-      notify(`✦ 副本勝利！+${rewards.xp}EXP +${rewards.gold}G`, 'ok');
+      if (!_autoRunning) notify(`✦ 副本勝利！+${rewards.xp}EXP +${rewards.gold}G`, 'ok');
       _covLog('win', `✦ 副本勝利！${rewards.xp}EXP · ${rewards.gold}G`);
       if(rewards.loot?.length) _covLog('win', `🎁 戰利品：${rewards.loot.join('、')}`);
 
@@ -1059,10 +1081,10 @@ function initCombatExtraSockets() {
   });
 
   s.on('dungeon:completed', () => {
-    notify('🏆 副本結束！', 'ok');
+    if (!_autoRunning) notify('🏆 副本結束！', 'ok');
     _covLog('win', '🏆 副本結束！');
 
-    // 如果正在自動連戰，不關閉視窗，並發起下一輪
+    // ✅ 修復多人模式連戰中斷的問題
     if (_combatMode === 'multi' && _autoRunning) {
         if (state.isLeader) {
            _autoRemain--;
@@ -1072,20 +1094,22 @@ function initCombatExtraSockets() {
            
            if (_autoRemain > 0) {
               _txt('cov-start-btn', '⏳ 自動發起再戰...');
-              setTimeout(() => { state.socket.emit('combat:request_restart', { roomCode: state.roomCode }); }, 1500);
-              return; 
+              // 發起下一輪投票/戰鬥
+              setTimeout(() => { state.socket.emit('combat:request_restart', { roomCode: state.roomCode }); }, 1000);
            } else {
               _autoRunning = false;
               _updateAutoLabel();
+              state.socket.emit('combat:host_auto', { roomCode: state.roomCode, autoState: false, count: 0 });
               _txt('cov-start-btn', '▶ 發起再戰');
               notify('✦ 自動戰鬥完成！', 'ok');
            }
         } else {
-           // 隊員若為自動模式，則留在畫面等待隊長倒數發起
-           return;
+           _txt('cov-start-btn', '⏳ 自動等待隊長...');
         }
+    } else {
+        _txt('cov-start-btn', state.isLeader ? '▶ 發起再戰' : '⏳ 等待隊長...');
     }
-    exitCombat();
+    // 這裡我們不呼叫 exitCombat()，讓畫面留在結算畫面等待下一步
   });
 
   s.on('combat:restart_vote', ({ seconds }) => {
@@ -1126,7 +1150,7 @@ function initCombatExtraSockets() {
           if(btn) { btn.disabled = true; btn.textContent = `✅ 已自動確認`; }
           state.socket.emit('combat:vote_yes', { roomCode: state.roomCode });
         }
-      }, 1500);
+      }, 500); // 隊員自動確認加速
     }
   });
 
