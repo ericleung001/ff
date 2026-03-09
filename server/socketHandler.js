@@ -22,7 +22,6 @@ module.exports = function initSockets(io) {
     }
   });
 
-  // ✅ 全新的離開與移交房主邏輯，整合斷線、離開、死亡
   async function handlePlayerLeave(roomCode, characterId, io) {
       if (!roomCode || !characterId) return;
       const room = await queryOne('SELECT * FROM dungeon_rooms WHERE room_code=?', [roomCode]);
@@ -43,7 +42,6 @@ module.exports = function initSockets(io) {
           activeSessions.delete(roomCode);
           return;
       } else if (Number(member.is_leader) === 1) {
-          // 房主離開，移交給最舊的隊員
           const newLeaderId = remaining[0].character_id;
           await execute('UPDATE room_members SET is_leader=TRUE WHERE room_id=? AND character_id=?', [room.id, newLeaderId]);
           
@@ -56,7 +54,6 @@ module.exports = function initSockets(io) {
           }
       }
 
-      // 如果正在戰鬥中，從戰鬥陣列中移除
       const session = activeSessions.get(roomCode);
       if (session && session.status === 'active') {
           session.party = session.party.filter(p => Number(p.characterId) !== Number(characterId));
@@ -150,7 +147,6 @@ module.exports = function initSockets(io) {
       await kickMember(room, targetId, '被隊長踢出隊伍');
     });
 
-    // 準備動作
     socket.on('room:ready', async ({ roomCode }) => {
       roomCode = String(roomCode).toUpperCase();
       const info = socketIndex.get(socket.id);
@@ -164,7 +160,6 @@ module.exports = function initSockets(io) {
       io.to(roomCode).emit('room:update', { members, status: room.status });
     });
 
-    // 5秒倒數開戰
     socket.on('dungeon:start', async ({ roomCode }) => {
       roomCode = String(roomCode).toUpperCase();
       const info = socketIndex.get(socket.id);
@@ -180,7 +175,7 @@ module.exports = function initSockets(io) {
       const allReady = members.every(m => Number(m.is_leader) === 1 || Number(m.is_ready) === 1);
       if (!allReady) return socket.emit('error', { msg: '必須等待所有人準備完成' });
 
-      io.to(roomCode).emit('dungeon:countdown', { seconds: 5 }); // 倒數 5 秒
+      io.to(roomCode).emit('dungeon:countdown', { seconds: 5 });
       
       setTimeout(async () => {
         const checkRoom = await queryOne('SELECT * FROM dungeon_rooms WHERE id=?', [room.id]);
@@ -217,7 +212,6 @@ module.exports = function initSockets(io) {
       await processCombatAction(io, session, info.characterId, skillId, targetIdx);
     });
 
-    // ✅ F5 斷線完美轉移處理
     socket.on('disconnect', async () => {
       const info = socketIndex.get(socket.id);
       if (info) {
@@ -227,9 +221,6 @@ module.exports = function initSockets(io) {
     });
   });
 
-  // ─────────────────────────────────────────────────────────
-  //  DUNGEON LOGIC
-  // ─────────────────────────────────────────────────────────
   async function startDungeon(io, room, members, roomCode) {
     await execute("UPDATE dungeon_rooms SET status='in_progress', started_at=NOW() WHERE id=?", [room.id]);
     io.to(roomCode).emit('dungeon:starting', { floor: 1 });
@@ -237,11 +228,10 @@ module.exports = function initSockets(io) {
   }
 
   async function spawnFloor(io, room, members, roomCode, floor) {
-    const enemyIds = getFloorEnemies(room.dungeon_id, floor);
-    const enemies = enemyIds.map(id => {
-      const base = ENEMIES && ENEMIES[id] ? ENEMIES[id] : { name: '怪物', icon: '', hp: 100, atk: [5,10], def: 2, xp: 20, gold: 10 };
-      return { ...base, currentHp: base.hp, statusEffects: [] };
-    });
+    // ✅ 修改：讀取 room.target_monster 作為目標
+    const targetId = room.target_monster || 'goblin';
+    const base = ENEMIES && ENEMIES[targetId] ? ENEMIES[targetId] : { name: '未知怪物', icon: '👹', hp: 100, atk: [5,10], def: 2, xp: 20, gold: 10 };
+    const enemies = [{ ...base, currentHp: base.hp, statusEffects: [] }];
 
     const party = await Promise.all(members.map(async (m) => {
       const c = await queryOne('SELECT * FROM characters WHERE id=?', [m.character_id]);
@@ -274,7 +264,6 @@ module.exports = function initSockets(io) {
     }, 500);
   }
 
-  // ✅ 戰鬥中陣亡自動離開與移交房主機制
   async function handleDeaths(io, session) {
     if (session.status !== 'active') return;
     const deadMembers = session.party.filter(p => p.hp <= 0);
@@ -287,7 +276,6 @@ module.exports = function initSockets(io) {
 
         const room = await queryOne('SELECT * FROM dungeon_rooms WHERE id=?', [session.roomId]);
         if (room) {
-            // kickMember 內部包含了 handlePlayerLeave，會正確執行房主移交與踢出
             await kickMember(room, dead.characterId, '你在戰鬥中陣亡，已離開副本！');
         }
         addLog(session, 'system', `☠ ${dead.name} 陣亡並離開了隊伍。`);
