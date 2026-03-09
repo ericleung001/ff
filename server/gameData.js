@@ -60,8 +60,11 @@ const LOOT_TABLE = {
 
 // How damage is calculated (server-authoritative)
 function calcDamage(attacker, skill, defenderDef = 0) {
-  const [min, max] = skill.baseDmg;
-  if (min === 0 && max === 0) return 0; // heal skill
+  // 🔥【BUG 修復 2】增加防呆陣列 || [5, 10]，避免找不到 baseDmg 時報錯崩潰
+  const [min, max] = skill.baseDmg || [5, 10];
+  
+  // 修正回復技能的返回值格式，避免後方取 dmgInfo.dmg 時變成 undefined
+  if (min === 0 && max === 0) return { dmg: 0, isCrit: false }; 
 
   let base = Math.floor(Math.random() * (max - min + 1)) + min;
   // stat scaling
