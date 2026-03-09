@@ -8,7 +8,6 @@ const TURN_TIMEOUT_MS = parseInt(process.env.DUNGEON_TURN_TIMEOUT) || 30000;
 
 const activeSessions = new Map();
 const socketIndex = new Map();
-const activeVotes = new Map(); 
 
 module.exports = function initSockets(io) {
 
@@ -229,7 +228,6 @@ module.exports = function initSockets(io) {
   }
 
   async function spawnFloor(io, room, members, roomCode, floor) {
-    // ✅ 讀取資料庫裡的目標怪物，找不到才給預設值
     const targetId = room.target_monster || 'goblin';
     const base = ENEMIES && ENEMIES[targetId] ? ENEMIES[targetId] : { name: '未知怪物', icon: '👹', hp: 100, atk: [5,10], def: 2, xp: 20, gold: 10 };
     const enemies = [{ ...base, currentHp: base.hp, statusEffects: [] }];
@@ -283,6 +281,7 @@ module.exports = function initSockets(io) {
     }
   }
 
+  // ✅ 完美群補與單補邏輯
   async function processCombatAction(io, session, characterId, skillId, targetIdx) {
     const attacker = session.party.find(p => Number(p.characterId) === Number(characterId));
     if (!attacker || attacker.hp <= 0) { advanceTurn(io, session); return; }
@@ -299,11 +298,37 @@ module.exports = function initSockets(io) {
     attacker.mp = Math.max(0, attacker.mp - (skill.cost||0));
     attacker.mp = Math.min(attacker.maxMp, attacker.mp + 5); 
 
-    if (skill.type === 'heal' || skill.id?.includes('heal') || skill.id === 'revive') {
-      const target = session.party[targetIdx % session.party.length];
-      const healAmt = calcHeal ? calcHeal(attacker) : 30;
-      target.hp = Math.min(target.maxHp, target.hp + healAmt);
-      addLog(session, 'player', `✨ ${attacker.name} 施放 ${skill.name}，恢復 ${healAmt} HP！`);
+    // 如果是群體補血 (聖職專屬)
+    if (skill.id === 'revive' || skill.id === 'bless') {
+        const healAmt = calcHeal ? calcHeal(attacker) : 30;
+        const actualHeal = skill.id === 'revive' ? Math.floor(healAmt * 1.5) : healAmt;
+        session.party.forEach(p => {
+            if (p.hp > 0) {
+                p.hp = Math.min(p.maxHp, p.hp + actualHeal);
+            }
+        });
+        addLog(session, 'player', `✨ ${attacker.name} 施放 ${skill.name}，全體恢復 ${actualHeal} HP！`);
+    
+    // 如果是單體補血 (聖職) 或 自補技能 (其他職業)
+    } else if (skill.type === 'heal' || skill.id?.includes('heal') || ['barrier', 'magic_shield', 'warcry', 'iron_skin', 'evade', 'lifesteal'].includes(skill.id)) {
+        const target = session.party[targetIdx % session.party.length] || attacker;
+        
+        let healAmt = calcHeal ? calcHeal(attacker) : 30;
+        
+        // 非聖職者的自我回復，以自己的主屬性做計算
+        if (attacker.job !== 'priest') {
+             const statKey = attacker.job === 'warrior' ? 'STR' : attacker.job === 'mage' ? 'INT' : 'AGI';
+             healAmt = Math.floor(20 + (attacker.stats[statKey] || 10) * 1.5);
+        }
+
+        if(target.hp > 0) {
+            target.hp = Math.min(target.maxHp, target.hp + healAmt);
+            addLog(session, 'player', `✨ ${attacker.name} 施放 ${skill.name}，為 ${target.name} 恢復 ${healAmt} HP！`);
+        } else {
+            addLog(session, 'player', `✨ ${attacker.name} 施放 ${skill.name}，但目標已倒下！`);
+        }
+
+    // 攻擊技能
     } else {
       const target = session.enemies.find((e, i) => i === targetIdx && e.currentHp > 0) || session.enemies.find(e => e.currentHp > 0);
       if (!target) { broadcastCombatState(io, session); checkCombatEnd(io, session); return; }
@@ -491,10 +516,6 @@ module.exports = function initSockets(io) {
        FROM room_members rm JOIN characters c ON c.id=rm.character_id
        WHERE rm.room_id=?`, [roomId]
     );
-  }
-
-  function getFloorEnemies(dungeonId, floor) {
-    return ['goblin']; 
   }
 
   function addLog(session, type, msg) {
