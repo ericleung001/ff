@@ -4,12 +4,10 @@ const BASE = window.location.origin;
 let _token = localStorage.getItem('ac_token') || null;
 let _socket = null;
 
-// ── Token helpers ─────────────────────────────────────────
 function setToken(t) { _token = t; localStorage.setItem('ac_token', t); }
 function clearToken()  { _token = null; localStorage.removeItem('ac_token'); }
 function getToken()    { return _token; }
 
-// ── HTTP helper ───────────────────────────────────────────
 async function api(method, path, body) {
   const res = await fetch(BASE + path, {
     method,
@@ -24,7 +22,6 @@ async function api(method, path, body) {
   return data;
 }
 
-// ── Auth ──────────────────────────────────────────────────
 async function register(username, email, password) {
   const d = await api('POST', '/api/auth/register', { username, email, password });
   setToken(d.token);
@@ -37,7 +34,6 @@ async function login(username, password) {
 }
 function logout() { clearToken(); _socket?.disconnect(); }
 
-// ── Characters ────────────────────────────────────────────
 const getChars      = ()            => api('GET',   '/api/characters');
 const createChar    = (name, job)   => api('POST',  '/api/characters', { name, job });
 const getChar       = (id)          => api('GET',   `/api/characters/${id}`);
@@ -47,15 +43,14 @@ const updateStory   = (id, idx)     => api('PATCH', `/api/characters/${id}/story
 const soloReward    = (id, data)    => api('POST',  `/api/characters/${id}/solo-reward`, data);
 const saveHpMp      = (id, hp, mp) => api('POST',  `/api/characters/${id}/save-hp`, { hp, mp });
 
-// ── Dungeons ──────────────────────────────────────────────
-const createRoom    = (characterId, dungeonId=1, maxPlayers=4, isPrivate=false, title='') =>
-  api('POST', '/api/dungeons/rooms', { characterId, dungeonId, maxPlayers, isPrivate, title });
+// ✅ 修改：將 extra 裡的 targetMonster 提取並送出
+const createRoom    = (characterId, dungeonId=1, maxPlayers=4, isPrivate=false, title='', extra={}) =>
+  api('POST', '/api/dungeons/rooms', { characterId, dungeonId, maxPlayers, isPrivate, title, targetMonster: extra.targetMonster });
 const joinRoom      = (roomCode, characterId)  => api('POST', '/api/dungeons/rooms/join', { roomCode, characterId });
 const getRoomInfo   = (code)        => api('GET',   `/api/dungeons/rooms/${code}`);
 const listRooms     = ()            => api('GET',   '/api/dungeons/rooms');
 const setReady      = (roomId, characterId) => api('PATCH', `/api/dungeons/rooms/${roomId}/ready`, { characterId });
 
-// ── Socket ────────────────────────────────────────────────
 function connectSocket() {
   if (_socket?.connected) return _socket;
   _socket = io(BASE, { auth: { token: _token }, transports: ['websocket','polling'] });
