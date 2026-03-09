@@ -380,11 +380,11 @@ function applyCombatUIVisibility() {
 }
 
 // ════════════════════════════════════════════
-//  COMBAT OVERLAY — SOLO  ✅ BUG FIX: 加了 _combatMode = 'solo'
+//  COMBAT OVERLAY — SOLO
 // ════════════════════════════════════════════
 function openCombatOverlay(monsterData) {
   if(!state.char) return;
-  _combatMode     = 'solo';          // ← BUG FIX #1: 強制重設為 solo 模式
+  _combatMode     = 'solo';
   _currentMonster = monsterData;
   _roundNum = 0; _autoRunning = false; _autoDone = 0;
 
@@ -468,13 +468,6 @@ function _startRound(monsterData) {
 
 function toggleCombatAuto() {
   if(!state.combat?.active) {
-    if (_combatMode === 'multi') {
-      if (state.isLeader) state.socket.emit('combat:request_restart', { roomCode: state.roomCode });
-      return;
-    }
-    if(_currentMonster) openCombatOverlay(_currentMonster);
-    else return;
-    // 重新開始：讀取 cov-count 次數，重設計數器
     const n = Math.max(1, parseInt(document.getElementById('cov-count')?.value)||10);
     _autoRemain = n;
     _autoDone = 0;
@@ -484,6 +477,16 @@ function toggleCombatAuto() {
     _txt('cov-done', 0);
     _txt('cov-start-btn','⏸ 暫停');
     _updateAutoLabel();
+
+    if (_combatMode === 'multi') {
+      if (state.isLeader) {
+         state.socket.emit('combat:host_auto', { roomCode: state.roomCode, autoState: true, count: n });
+         state.socket.emit('combat:request_restart', { roomCode: state.roomCode });
+      }
+      return;
+    }
+    
+    if(_currentMonster) openCombatOverlay(_currentMonster);
     _schedulePlayer();
     return;
   }
@@ -492,7 +495,6 @@ function toggleCombatAuto() {
   _txt('cov-start-btn', _autoRunning ? '⏸ 暫停' : '▶ 繼續');
   _updateAutoLabel();
 
-  // Solo 同 multi 都要讀取次數
   if(_autoRunning && _autoRemain === 0) {
     const n = Math.max(1, parseInt(document.getElementById('cov-count')?.value)||10);
     _autoRemain = n;
@@ -842,11 +844,9 @@ async function _onVictory() {
       hp:   state.char.hp,
       mp:   state.char.mp
     });
-    // server 返回 { character: {...}, leveledUp: bool }，需要取 .character
+    // server 返回 { character: {...}, leveledUp: bool }
     const updated = res?.character || res;
-    // 確保 updated 係有效角色物件（有 id、name、job）才整體替換 state.char
     if(updated && updated.id && updated.name && updated.job) {
-      // 補回 server 可能冇回傳嘅欄位，防止 refreshSidebar 出 undefined
       updated.equipment     = updated.equipment     || state.char.equipment     || [];
       updated.learnedSkills = updated.learnedSkills || state.char.learnedSkills || {};
       updated.stats         = updated.stats         || state.char.stats         || {};
@@ -855,19 +855,15 @@ async function _onVictory() {
       state.char = updated;
       if(res?.leveledUp) notify('🎉 升級了！現在是 Lv.' + updated.level + '！', 'ok');
     } else {
-      // server 回應格式有問題 → 只本地補數值，保留原有 state.char
       state.char.xp   = (state.char.xp   || 0) + (e.xp   || 0);
       state.char.gold = (state.char.gold || 0) + (e.gold || 0);
     }
   } catch(err) {
-    // 網絡失敗 → 只本地補數值，保留原有 state.char
     state.char.xp   = (state.char.xp   || 0) + (e.xp   || 0);
     state.char.gold = (state.char.gold || 0) + (e.gold || 0);
   }
-  // 無論成功失敗都刷新 UI
   if(typeof refreshSidebar === 'function') refreshSidebar();
 
-  // 勝利後改按鈕：逃跑→離開，開始→再戰
   const fleeBtn = document.querySelector('.cov-flee-btn');
   if(fleeBtn) {
     fleeBtn.innerHTML = '🚪 離開';
@@ -910,7 +906,7 @@ async function _onDefeat() {
 }
 
 // ════════════════════════════════════════════
-//  SOCKET LISTENERS  ✅ BUG FIX #2: 多人副本修復
+//  SOCKET LISTENERS 
 // ════════════════════════════════════════════
 let _combatExtraSocketBound = false;
 function initCombatExtraSockets() {
@@ -918,14 +914,10 @@ function initCombatExtraSockets() {
   _combatExtraSocketBound = true;
   const s = state.socket;
 
-  // ── BUG FIX #2a: dungeon:countdown 改用 notify，不依賴按鈕存在 ──
   s.on('dungeon:countdown', ({ seconds }) => {
     let sec = seconds;
-
-    // 更新 room 內按鈕（如果存在）
     const btn = document.getElementById('mr-start-btn');
     if(btn) { btn.disabled = true; btn.textContent = `⏳ 戰鬥倒數 ${sec}...`; }
-
     notify(`⚔️ 戰鬥即將開始！倒數 ${sec} 秒...`, 'ok');
 
     if (window._dungeonCdIntv) clearInterval(window._dungeonCdIntv);
@@ -940,14 +932,10 @@ function initCombatExtraSockets() {
     }, 1000);
   });
 
-  // ── BUG FIX #2b: combat:start 先確保在 game 畫面 ──
   s.on('combat:start', (payload) => {
     _combatMode = 'multi';
-
-    // 確保在 game 畫面（combat overlay 是 game 畫面內的元素）
     if (typeof goScreen === 'function') goScreen('game');
 
-    // 小延遲等 DOM 就位
     setTimeout(() => {
       if (typeof setMenu === 'function') setMenu('combat');
       openMultiCombatOverlay(payload.floor, payload.enemies, payload.party);
@@ -1023,8 +1011,6 @@ function initCombatExtraSockets() {
 
   s.on('room:update', ({ members, status }) => {
     if(status === 'waiting') {
-      // 戰鬥結束，返回房間視圖
-      exitCombat();
       if(typeof renderMultiMembers === 'function') renderMultiMembers(members);
     } else {
       if(typeof renderMultiMembers === 'function') renderMultiMembers(members);
@@ -1049,17 +1035,20 @@ function initCombatExtraSockets() {
 
       _txt('cov-start-btn', state.isLeader ? '▶ 發起再戰' : '⏳ 等待隊長...');
 
-      if(state.isLeader) {
-        _autoRemain--;
-        if(_autoRunning && _autoRemain > 0) {
-          setTimeout(() => { state.socket.emit('combat:request_restart', { roomCode: state.roomCode }); }, 1500);
-        }
+      // 向後端請求最新資料，同步升級狀態
+      if(AC_API && AC_API.getChar) {
+         AC_API.getChar(state.char.id).then(updated => {
+             if(updated && updated.level > state.char.level) {
+                 notify('🎉 升級了！現在是 Lv.' + updated.level + '！', 'ok');
+             }
+             if(updated) {
+                 updated.equipment = updated.equipment || state.char.equipment || [];
+                 updated.learnedSkills = updated.learnedSkills || state.char.learnedSkills || {};
+                 state.char = updated;
+             }
+             if(typeof refreshSidebar === 'function') refreshSidebar();
+         });
       }
-
-      // 更新本地角色數據
-      state.char.xp   = (state.char.xp   || 0) + rewards.xp;
-      state.char.gold = (state.char.gold || 0) + rewards.gold;
-      if(typeof refreshSidebar === 'function') refreshSidebar();
 
     } else {
       notify('☠ 全滅...2秒後返回房間', 'err');
@@ -1067,6 +1056,36 @@ function initCombatExtraSockets() {
       _autoRunning = false;
       setTimeout(() => { exitCombat(); leaveMultiRoom(); }, 2000);
     }
+  });
+
+  s.on('dungeon:completed', () => {
+    notify('🏆 副本結束！', 'ok');
+    _covLog('win', '🏆 副本結束！');
+
+    // 如果正在自動連戰，不關閉視窗，並發起下一輪
+    if (_combatMode === 'multi' && _autoRunning) {
+        if (state.isLeader) {
+           _autoRemain--;
+           _autoDone++;
+           _txt('cov-done', _autoDone);
+           _txt('cov-total', _autoDone + _autoRemain);
+           
+           if (_autoRemain > 0) {
+              _txt('cov-start-btn', '⏳ 自動發起再戰...');
+              setTimeout(() => { state.socket.emit('combat:request_restart', { roomCode: state.roomCode }); }, 1500);
+              return; 
+           } else {
+              _autoRunning = false;
+              _updateAutoLabel();
+              _txt('cov-start-btn', '▶ 發起再戰');
+              notify('✦ 自動戰鬥完成！', 'ok');
+           }
+        } else {
+           // 隊員若為自動模式，則留在畫面等待隊長倒數發起
+           return;
+        }
+    }
+    exitCombat();
   });
 
   s.on('combat:restart_vote', ({ seconds }) => {
@@ -1111,10 +1130,5 @@ function initCombatExtraSockets() {
     }
   });
 
-  s.on('dungeon:completed', () => {
-    notify('🏆 副本全部通關！', 'ok');
-    _covLog('win', '🏆 全部樓層通關！');
-    exitCombat();
-  });
 }
 initCombatExtraSockets();
