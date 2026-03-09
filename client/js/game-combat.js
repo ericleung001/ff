@@ -369,13 +369,9 @@ function joinRoomSocket(roomCode){
 function applyCombatUIVisibility() {
   const autoBar   = document.querySelector('.cov-auto-bar');
   const bottomBar = document.querySelector('.cov-bottom');
-  if (_combatMode === 'multi' && !state.isLeader) {
-    if (autoBar)   autoBar.style.display   = 'none';
-    if (bottomBar) bottomBar.style.display = 'none';
-  } else {
-    if (autoBar)   autoBar.style.display   = 'flex';
-    if (bottomBar) bottomBar.style.display = 'flex';
-  }
+  // ✅ 修改：非房主現在也能看到所有按鈕與自動戰鬥工具列
+  if (autoBar)   autoBar.style.display   = 'flex';
+  if (bottomBar) bottomBar.style.display = 'flex';
 }
 
 // ════════════════════════════════════════════
@@ -395,7 +391,6 @@ function openCombatOverlay(monsterData, isAutoRepeat = false) {
 
   applyCombatUIVisibility();
 
-  // ✅ 清空上一場的戰鬥日誌
   const lg = document.getElementById('cov-log');
   if (lg) lg.innerHTML = '';
 
@@ -403,6 +398,8 @@ function openCombatOverlay(monsterData, isAutoRepeat = false) {
   if (prog) prog.style.display = _autoRunning ? 'flex' : 'none';
   
   _txt('cov-start-btn', _autoRunning ? '⏸ 暫停' : '▶ 開始戰鬥');
+  document.getElementById('cov-start-btn').onclick = toggleCombatAuto;
+  
   const fleeBtn = document.querySelector('.cov-flee-btn');
   if(fleeBtn) { fleeBtn.innerHTML = '⚡ 逃跑'; fleeBtn.onclick = doFlee; }
   document.getElementById('combat-overlay')?.classList.add('active');
@@ -440,14 +437,15 @@ function openMultiCombatOverlay(floor, enemies, party) {
   const firstEnemy = enemies?.[0] || { name:'未知敵人', icon:'👹', maxHp:100, currentHp:100 };
   _currentMonster = null;
 
-  // ✅ 清空上一場的戰鬥日誌
   const lg=document.getElementById('cov-log'); 
   if(lg) lg.innerHTML='';
 
   const prog=document.getElementById('cov-progress'); 
   if(prog) prog.style.display = _autoRunning ? 'flex' : 'none';
   
-  _txt('cov-start-btn', _autoRunning ? '⏸ 暫停' : '⏳ 等待出手...');
+  _txt('cov-start-btn', _autoRunning ? '⏸ 暫停自動' : '⏳ 等待出手...');
+  document.getElementById('cov-start-btn').onclick = toggleCombatAuto;
+  
   const fleeBtn = document.querySelector('.cov-flee-btn');
   if(fleeBtn) { fleeBtn.innerHTML = '⚡ 逃跑'; fleeBtn.onclick = doFlee; }
 
@@ -494,6 +492,7 @@ function _startRound(monsterData) {
 
 function toggleCombatAuto() {
   if(!state.combat?.active) {
+    // 結算或等待畫面中，點擊即為開啟自動並執行開始/準備
     const n = Math.max(1, parseInt(document.getElementById('cov-count')?.value)||10);
     _autoRemain = n;
     _autoDone = 0;
@@ -507,11 +506,9 @@ function toggleCombatAuto() {
     if (_combatMode === 'multi') {
       if (state.isLeader) {
          state.socket.emit('combat:host_auto', { roomCode: state.roomCode, autoState: true, count: n });
-         const btnClick = document.getElementById('cov-start-btn').onclick;
-         if (btnClick === startDungeon) startDungeon();
+         startDungeon();
       } else {
-         const btnClick = document.getElementById('cov-start-btn').onclick;
-         if (btnClick === toggleReady) toggleReady();
+         toggleReady();
       }
       return;
     }
@@ -520,8 +517,9 @@ function toggleCombatAuto() {
     return;
   }
 
+  // 戰鬥進行中的暫停與繼續
   _autoRunning = !_autoRunning;
-  _txt('cov-start-btn', _autoRunning ? '⏸ 暫停' : '▶ 繼續');
+  _txt('cov-start-btn', _autoRunning ? '⏸ 暫停' : '▶ 繼續自動');
   _updateAutoLabel();
 
   if(_autoRunning && _autoRemain <= 0) {
@@ -896,7 +894,6 @@ async function _onVictory() {
     fleeBtn.onclick = () => exitCombat();
   }
 
-  // 自動重複 (單人模式)
   if(_autoRunning) {
     _autoRemain = Math.max(0, _autoRemain-1);
     _autoDone++;
@@ -912,11 +909,13 @@ async function _onVictory() {
       _autoRemain = 0;
       document.getElementById('cov-progress').style.display = 'none';
       _txt('cov-start-btn','▶ 再戰一場');
+      document.getElementById('cov-start-btn').onclick = toggleCombatAuto;
       _updateAutoLabel();
       notify('✦ 自動戰鬥完成！', 'ok');
     }
   } else {
     _txt('cov-start-btn','▶ 再戰一場');
+    document.getElementById('cov-start-btn').onclick = toggleCombatAuto;
   }
 }
 
@@ -927,6 +926,7 @@ async function _onDefeat() {
   _covLog('lose', `☠ 被 ${state.combat.enemy?.name||'敵人'} 擊敗...`);
   notify('☠ 戰鬥失敗！', 'err');
   _txt('cov-start-btn','▶ 再試一次');
+  document.getElementById('cov-start-btn').onclick = toggleCombatAuto;
   _updateAutoLabel();
   try { await AC_API.saveHpMp(state.char.id, Math.floor((state.char.effMaxHp||100)*0.2), state.char.mp); } catch{}
 }
@@ -1038,13 +1038,15 @@ function initCombatExtraSockets() {
 
   // ✅ 大幅重構：利用大廳原生的 room:update 機制來判定全員就緒
   s.on('room:update', ({ members, status }) => {
+    if (state.char) {
+        const me = members.find(m => Number(m.character_id) === Number(state.char.id));
+        if (me) state.isLeader = (Number(me.is_leader) === 1);
+    }
     if(typeof renderMultiMembers === 'function') renderMultiMembers(members);
 
-    // 如果目前在多人模式且戰鬥已結束 (等候畫面)
     const overlay = document.getElementById('combat-overlay');
     if (overlay && overlay.classList.contains('active') && _combatMode === 'multi') {
         if (status === 'waiting' && state.combat && !state.combat.active) {
-            
             const me = members.find(m => Number(m.character_id) === Number(state.char.id));
             const allReady = members.every(m => Number(m.is_leader)===1 || Number(m.is_ready)===1);
 
@@ -1052,8 +1054,7 @@ function initCombatExtraSockets() {
                 if (allReady) {
                     _txt('cov-start-btn', '▶ 全員就緒，開始戰鬥！');
                     document.getElementById('cov-start-btn').onclick = startDungeon;
-                    
-                    // 房主如果在自動戰鬥中，且全員就緒，自動點擊開始
+                    document.getElementById('cov-start-btn').disabled = false;
                     if (_autoRunning && _autoRemain > 0) {
                         setTimeout(() => { startDungeon(); }, 500);
                     }
@@ -1061,16 +1062,16 @@ function initCombatExtraSockets() {
                     const readyCount = members.filter(m => Number(m.is_ready)===1 || Number(m.is_leader)===1).length;
                     _txt('cov-start-btn', `⏳ 等待隊友 (${readyCount}/${members.length})`);
                     document.getElementById('cov-start-btn').onclick = null;
+                    document.getElementById('cov-start-btn').disabled = true;
                 }
             } else {
+                document.getElementById('cov-start-btn').disabled = false;
                 if (me && Number(me.is_ready)===1) {
                     _txt('cov-start-btn', '✅ 已準備，等待房主');
                     document.getElementById('cov-start-btn').onclick = toggleReady;
                 } else {
                     _txt('cov-start-btn', '▶ 準備再戰');
                     document.getElementById('cov-start-btn').onclick = toggleReady;
-                    
-                    // 隊員如果在自動戰鬥中，自動點擊準備
                     if (_autoRunning && _autoRemain > 0) {
                         setTimeout(() => { toggleReady(); }, 500);
                     }
@@ -1133,7 +1134,6 @@ function initCombatExtraSockets() {
            notify('✦ 自動戰鬥完成！', 'ok');
         }
     }
-    // 這裡我們不呼叫 exitCombat()，讓畫面留在戰鬥結算頁面，由 room:update 接手再戰流程
   });
 }
 initCombatExtraSockets();
