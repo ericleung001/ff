@@ -37,8 +37,10 @@ app.get('*', (req, res) => {
   }
 });
 
-// ✅ 自動修正資料庫，加入 target_monster 欄位
+// ✅ 自動修正資料庫欄位 (目標怪物 + 擴充裝備位置)
 pool.query("ALTER TABLE dungeon_rooms ADD COLUMN target_monster VARCHAR(50) DEFAULT 'goblin'").catch(() => {});
+pool.query("ALTER TABLE char_equipment MODIFY COLUMN slot ENUM('head','headgear','neck','weapon','armor','hand','foot','accessory_l','accessory_r','accessory') NOT NULL").catch(() => {});
+pool.query("ALTER TABLE inventory MODIFY COLUMN item_type ENUM('weapon','armor','accessory','consumable','material','head','hand','foot','accessory_l','accessory_r','headgear','neck') NOT NULL").catch(() => {});
 
 initSockets(io);
 
