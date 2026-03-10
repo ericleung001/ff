@@ -1592,7 +1592,7 @@ body::after{
     <label class="inp-label" style="margin-bottom:10px;display:block">◆ 選擇職業</label>
     <div class="job-grid">
       <div class="job-card" data-job="mage" onclick="selJob(this)">
-        <span class="job-icon">🧙</span>
+        <span class="job-icon"></span>
         <span class="job-name">法師</span>
         <span class="job-desc">強力咒文焚盡敵人的魔法使者</span>
         <span class="job-stat">INT +5  MP +40</span>
@@ -1604,7 +1604,7 @@ body::after{
         <span class="job-stat">STR +5  HP +40</span>
       </div>
       <div class="job-card" data-job="rogue" onclick="selJob(this)">
-        <span class="job-icon">🗡️</span>
+        <span class="job-icon">️</span>
         <span class="job-name">盜賊</span>
         <span class="job-desc">以迅捷身法突襲要害的暗影刺客</span>
         <span class="job-stat">AGI +5  CRIT +15%</span>
@@ -1650,7 +1650,7 @@ body::after{
           <span class="micon">⛏️</span><span class="mlabel">採集活動</span>
         </button>
         <button class="menu-btn" id="mbtn-house" data-tip="房屋" onclick="setMenu('house')">
-          <span class="micon">🏡</span><span class="mlabel">房屋管理</span>
+          <span class="micon"></span><span class="mlabel">房屋管理</span>
         </button>
 
         <div class="menu-divider"></div>
@@ -1659,19 +1659,19 @@ body::after{
           <span class="micon">⚒</span><span class="mlabel">製作</span>
         </button>
         <button class="menu-btn" id="mbtn-tools" data-tip="製作工具" onclick="setMenu('tools')">
-          <span class="micon">🪓</span><span class="mlabel">製作工具</span>
+          <span class="micon"></span><span class="mlabel">製作工具</span>
         </button>
 
         <div class="menu-divider"></div>
         <div class="menu-section-lbl">── 進度 ──</div>
         <button class="menu-btn" id="mbtn-quests" data-tip="任務" onclick="setMenu('quests')">
-          <span class="micon">📜</span><span class="mlabel">任務列表</span>
+          <span class="micon"></span><span class="mlabel">任務列表</span>
         </button>
 
         <div class="menu-divider"></div>
         <div class="menu-section-lbl">── 社交 ──</div>
         <button class="menu-btn" id="mbtn-friends" data-tip="朋友" onclick="setMenu('friends')">
-          <span class="micon">🤝</span><span class="mlabel">朋友列表</span>
+          <span class="micon"></span><span class="mlabel">朋友列表</span>
         </button>
 
         <div class="menu-bottom">
@@ -1680,10 +1680,10 @@ body::after{
             <span class="micon">✨</span><span class="mlabel">學習技能</span>
           </button>
           <button class="menu-btn" data-tip="道具袋" onclick="goScreen('bag')">
-            <span class="micon">🎒</span><span class="mlabel">道具袋</span>
+            <span class="micon"></span><span class="mlabel">道具袋</span>
           </button>
           <button class="menu-btn" data-tip="換角色" onclick="goScreen('chars')">
-            <span class="micon">🔄</span><span class="mlabel">更換角色</span>
+            <span class="micon"></span><span class="mlabel">更換角色</span>
           </button>
         </div>
       </div>
@@ -1749,10 +1749,10 @@ body::after{
 
           <div class="combat-mode-tabs">
             <button class="combat-mode-tab active" id="cmtab-solo" onclick="setCombatMode('solo')">
-              👤 單人模式
+               單人模式
             </button>
             <button class="combat-mode-tab" id="cmtab-multi" onclick="setCombatMode('multi')">
-              👥 多人模式
+               多人模式
             </button>
           </div>
 
@@ -1765,7 +1765,7 @@ body::after{
             <div id="monster-section-wrap" style="display:none">
               <div class="monster-section">
                 <div class="monster-section-hdr">
-                  <span id="monster-section-icon">👾</span>
+                  <span id="monster-section-icon"></span>
                   <span class="monster-section-title" id="monster-section-name">怪物列表</span>
                   <span class="monster-section-sub" id="monster-section-sub">選擇目標出擊</span>
                 </div>
@@ -1785,9 +1785,9 @@ body::after{
           <div class="combat-mode-pane" id="cm-multi">
 
             <div class="multi-tabs-row">
-              <button class="multi-tab active" id="mtab-find"   onclick="setMultiTab('find')">🔍 尋找房間</button>
+              <button class="multi-tab active" id="mtab-find"   onclick="setMultiTab('find')"> 尋找房間</button>
               <button class="multi-tab"        id="mtab-create" onclick="setMultiTab('create')">➕ 創建房間</button>
-              <button class="multi-tab"        id="mtab-room"   onclick="setMultiTab('room')" style="display:none">🚪 房間內</button>
+              <button class="multi-tab"        id="mtab-room"   onclick="setMultiTab('room')" style="display:none"> 房間內</button>
             </div>
 
             <div class="multi-tab-pane active" id="mtab-pane-find">
@@ -1804,7 +1804,7 @@ body::after{
 
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
                 <div class="sec" style="margin:0">公開房間</div>
-                <button class="btn btn-sm btn-ghost" onclick="refreshMultiRooms()" style="font-size:.68rem;padding:4px 10px">🔄 重整</button>
+                <button class="btn btn-sm btn-ghost" onclick="refreshMultiRooms()" style="font-size:.68rem;padding:4px 10px"> 重整</button>
               </div>
               <div id="multi-room-list">
                 <div style="font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--text-dim);text-align:center;padding:14px 0">載入中…</div>
@@ -1818,7 +1818,7 @@ body::after{
               <div id="create-monster-wrap" style="display:none">
                 <div class="monster-section">
                   <div class="monster-section-hdr">
-                    <span id="create-monster-icon">👾</span>
+                    <span id="create-monster-icon"></span>
                     <span class="monster-section-title" id="create-monster-name">怪物列表</span>
                     <span class="monster-section-sub" id="create-monster-sub">選擇目標</span>
                   </div>
@@ -1837,8 +1837,8 @@ body::after{
                 <div class="room-field">
                   <span class="room-field-label">公開 / 私人</span>
                   <div class="room-toggle-row">
-                    <button class="room-toggle-btn sel" id="mc-pub-btn" onclick="setMCPrivacy(false)">🌐 公開</button>
-                    <button class="room-toggle-btn" id="mc-priv-btn" onclick="setMCPrivacy(true)">🔒 私人</button>
+                    <button class="room-toggle-btn sel" id="mc-pub-btn" onclick="setMCPrivacy(false)"> 公開</button>
+                    <button class="room-toggle-btn" id="mc-priv-btn" onclick="setMCPrivacy(true)"> 私人</button>
                   </div>
                   <input type="hidden" id="mc-private" value="0">
                 </div>
@@ -1847,8 +1847,8 @@ body::after{
                   <span class="room-field-label">要求職業（可多選，不選 = 任意）</span>
                   <div class="job-chips">
                     <button class="job-chip" data-job="warrior"  onclick="toggleJobChip(this)">⚔️ 勇者</button>
-                    <button class="job-chip" data-job="mage"     onclick="toggleJobChip(this)">🧙 法師</button>
-                    <button class="job-chip" data-job="rogue"    onclick="toggleJobChip(this)">🗡️ 盜賊</button>
+                    <button class="job-chip" data-job="mage"     onclick="toggleJobChip(this)"> 法師</button>
+                    <button class="job-chip" data-job="rogue"    onclick="toggleJobChip(this)">️ 盜賊</button>
                     <button class="job-chip" data-job="priest"   onclick="toggleJobChip(this)">✨ 聖職者</button>
                   </div>
                 </div>
@@ -1890,19 +1890,19 @@ body::after{
         <div class="content-panel" id="panel-gather">
           <div class="gather-grid">
             <div class="gather-card" id="gcard-farm" onclick="startGather('farm')">
-              <span class="gather-icon">🌾</span>
+              <span class="gather-icon"></span>
               <div class="gather-name">耕田</div>
               <div class="gather-desc">種植農作物，定時收成獲取食材與藥草。</div>
               <div class="gather-bonus" id="gbonus-farm">加成：─</div>
             </div>
             <div class="gather-card" id="gcard-fish" onclick="startGather('fish')">
-              <span class="gather-icon">🎣</span>
+              <span class="gather-icon"></span>
               <div class="gather-name">釣魚</div>
               <div class="gather-desc">垂釣江河湖海，獲取魚類與稀有素材。</div>
               <div class="gather-bonus" id="gbonus-fish">加成：─</div>
             </div>
             <div class="gather-card" id="gcard-wood" onclick="startGather('wood')">
-              <span class="gather-icon">🪓</span>
+              <span class="gather-icon"></span>
               <div class="gather-name">伐木</div>
               <div class="gather-desc">砍伐森林木材，可用於建造房屋或製作道具。</div>
               <div class="gather-bonus" id="gbonus-wood">加成：─</div>
@@ -1929,14 +1929,14 @@ body::after{
           </div>
           <div class="house-grid">
             <div class="house-card" id="hcard-pond" onclick="toggleHouse('pond')">
-              <span class="house-icon">🐟</span>
+              <span class="house-icon"></span>
               <div class="house-name">魚　場</div>
               <div class="house-bonus">釣魚效率 +50%<br>稀有魚獲機率 +25%<br>釣魚 EXP +30%</div>
               <div class="house-cost">建造：500 金幣 · 木材 ×20</div>
               <span class="house-tag locked" id="htag-pond">── 未建造 ──</span>
             </div>
             <div class="house-card" id="hcard-farm" onclick="toggleHouse('farm')">
-              <span class="house-icon">🏡</span>
+              <span class="house-icon"></span>
               <div class="house-name">農　場</div>
               <div class="house-bonus">耕田效率 +50%<br>收成量 +40%<br>藥草掉落率 +20%</div>
               <div class="house-cost">建造：400 金幣 · 木材 ×15</div>
@@ -1950,7 +1950,7 @@ body::after{
               <span class="house-tag locked" id="htag-forge">── 未建造 ──</span>
             </div>
             <div class="house-card" id="hcard-sawmill" onclick="toggleHouse('sawmill')">
-              <span class="house-icon">🪵</span>
+              <span class="house-icon"></span>
               <div class="house-name">木材廠</div>
               <div class="house-bonus">伐木效率 +60%<br>木材產量 +50%<br>建造費用 -15%</div>
               <div class="house-cost">建造：350 金幣 · 木材 ×10</div>
@@ -2004,8 +2004,11 @@ body::after{
 
         <div class="content-panel" id="panel-tools">
           <div style="font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--silver);letter-spacing:.5px;line-height:2;margin-bottom:14px">
-            ◆ 製作採集工具可大幅提升採集效率與品質。
+            ◆ 升級工具最高可達 Lv.100。高等級工具將大幅縮短採集時間、解鎖高等裝備的強化與製作。
           </div>
+          <div class="craft-grid" id="craft-grid-tools"></div>
+          
+          
           <div class="craft-grid">
             <div class="craft-card" onclick="openCraft('pickaxe')">
               <span class="craft-icon">⛏️</span>
@@ -2014,42 +2017,40 @@ body::after{
               <div class="craft-req">鐵礦 ×6 · 木材 ×3<br>採礦效率 +30%</div>
             </div>
             <div class="craft-card" onclick="openCraft('axe')">
-              <span class="craft-icon">🪓</span>
+              <span class="craft-icon"></span>
               <div class="craft-name">強化斧頭</div>
               <div class="craft-type">伐木工具</div>
               <div class="craft-req">鐵礦 ×4 · 木材 ×5<br>伐木效率 +40%</div>
             </div>
             <div class="craft-card" onclick="openCraft('rod')">
-              <span class="craft-icon">🎣</span>
+              <span class="craft-icon"></span>
               <div class="craft-name">精良釣魚竿</div>
               <div class="craft-type">釣魚工具</div>
               <div class="craft-req">木材 ×6 · 鯉魚 ×3<br>釣魚效率 +35%</div>
             </div>
             <div class="craft-card" onclick="openCraft('hoe')">
-              <span class="craft-icon">🌾</span>
+              <span class="craft-icon"></span>
               <div class="craft-name">金屬鋤頭</div>
               <div class="craft-type">耕田工具</div>
               <div class="craft-req">鐵礦 ×3 · 木材 ×4<br>耕田效率 +25%</div>
             </div>
             <div class="craft-card" onclick="openCraft('waterskin')">
-              <span class="craft-icon">🏺</span>
+              <span class="craft-icon"></span>
               <div class="craft-name">藥水容器</div>
               <div class="craft-type">道具</div>
               <div class="craft-req">獸皮 ×5 · 草藥 ×2<br>可攜帶 HP 藥水 ×3</div>
             </div>
             <div class="craft-card" onclick="openCraft('torch')">
-              <span class="craft-icon">🔥</span>
+              <span class="craft-icon"></span>
               <div class="craft-name">礦山火把</div>
               <div class="craft-type">道具</div>
               <div class="craft-req">木材 ×3 · 草藥 ×1<br>深層礦山解鎖</div>
             </div>
           </div>
           <div class="craft-result-card" id="craft-result-tools">
-            <div style="font-family:'DotGothic16',monospace;font-size:.8rem;color:var(--gold);letter-spacing:2px;margin-bottom:10px" id="craft-result-tools-title">製作確認</div>
+            <div style="font-family:'DotGothic16',monospace;font-size:.8rem;color:var(--gold);letter-spacing:2px;margin-bottom:10px" id="craft-result-tools-title">升級確認</div>
             <div style="font-family:'DotGothic16',monospace;font-size:.72rem;color:var(--silver);line-height:1.8;margin-bottom:12px" id="craft-result-tools-body"></div>
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-full" onclick="doCraft()">確認製作</button>
-              <button class="btn btn-full btn-ghost" onclick="closeCraft()">取消</button>
+            <div class="flex-btns" style="display:flex;gap:8px">
             </div>
           </div>
         </div>
