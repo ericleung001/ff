@@ -1,10 +1,10 @@
 // ════════════════════════════════════════════
 //  BAG / INVENTORY
 // ════════════════════════════════════════════
-const ITEM_ICONS   = { weapon:'⚔️', armor:'🛡️', accessory:'💍', consumable:'🧪', material:'💎' };
+const ITEM_ICONS   = { weapon:'⚔️', armor:'🛡️', accessory:'💍', consumable:'🧪', material:'💎', head:'🪖', headgear:'👑', neck:'📿', hand:'🧤', foot:'👞', accessory_l:'💍', accessory_r:'💍' };
 const RARITY_LABELS= { common:'普通', rare:'稀有', epic:'史詩', legend:'傳說' };
-const SLOT_NAMES   = { weapon:'武器', armor:'護甲', accessory:'飾品' };
-const SLOT_ICONS   = { weapon:'⚔️', armor:'🛡️', accessory:'💍' };
+const SLOT_NAMES   = { head:'頭部', headgear:'頭飾', neck:'頸部', weapon:'武器', armor:'身體', hand:'手部', foot:'腳部', accessory_l:'左飾', accessory_r:'右飾' };
+const SLOT_ICONS   = { head:'🪖', headgear:'👑', neck:'📿', weapon:'⚔️', armor:'🛡️', hand:'🧤', foot:'👞', accessory_l:'💍', accessory_r:'💍' };
 
 let _modalItem = null;
 
@@ -21,14 +21,15 @@ async function loadBag(){
   const c=state.char;
   document.getElementById('bag-gold').textContent=`💰 ${c.gold||0} 金幣`;
 
-  const slots=['weapon','armor','accessory'];
+  // ✅ 更新道具袋的 9 個裝備槽位
+  const slots=['head', 'headgear', 'neck', 'weapon', 'armor', 'hand', 'foot', 'accessory_l', 'accessory_r'];
   const equip=c.equipment||[];
   document.getElementById('bag-equip-slots').innerHTML=slots.map(slot=>{
     const e=equip.find(x=>x.slot===slot);
     const bonusStr=e?.bonus?Object.entries(e.bonus).filter(([,v])=>v).map(([k,v])=>`${k}+${v}`).join(' '):'';
     return `<div class="equip-card">
-      <span class="equip-card-slot">${SLOT_ICONS[slot]} ${SLOT_NAMES[slot]}</span>
-      <span class="equip-card-icon">${e?(ITEM_ICONS[slot]||'📦'):'─'}</span>
+      <span class="equip-card-slot">${SLOT_ICONS[slot]||'📦'} ${SLOT_NAMES[slot]||slot}</span>
+      <span class="equip-card-icon">${e?(ITEM_ICONS[e.type||slot]||'📦'):'─'}</span>
       <span class="equip-card-name rarity-${e?.rarity||'common'}">${e?.name||'未裝備'}</span>
       <span class="equip-card-stats">${bonusStr||(e?e.rarity:'')}</span>
     </div>`;
@@ -59,7 +60,9 @@ function openItemModal(idx){
   const bonus=item.bonus||{};
   const bonusLines=Object.entries(bonus).filter(([,v])=>v).map(([k,v])=>`${k} +${v}`);
   document.getElementById('modal-stats').innerHTML=bonusLines.length?bonusLines.join('<br>'):(item.type==='material'?'製作素材，暫無直接效果':'─');
-  const canEquip=['weapon','armor','accessory'].includes(item.type);
+  
+  // ✅ 確保新裝備可以裝備
+  const canEquip=['head', 'headgear', 'neck', 'weapon', 'armor', 'hand', 'foot', 'accessory_l', 'accessory_r'].includes(item.type);
   document.getElementById('modal-equip-btn').style.display=canEquip?'':'none';
   document.getElementById('item-modal').classList.add('open');
 }
