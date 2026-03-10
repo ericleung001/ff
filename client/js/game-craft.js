@@ -64,6 +64,7 @@ function renderCraftGrids() {
     }).join('');
   }
 
+  // ✅ 強化列表：將名稱、等級、屬性整合在一行清晰顯示
   if (_currentCraftTab === 'enhance') {
     const grid = document.getElementById('craft-grid-enhance');
     if (!grid) return;
@@ -78,18 +79,25 @@ function renderCraftGrids() {
     }
     grid.innerHTML = all.map(item => {
       const icon = typeof ITEM_ICONS !== 'undefined' ? (ITEM_ICONS[item.type || item.slot] || '📦') : '📦';
-      const equipTag = item.isEquipped ? `<br><span style="color:var(--gold);font-size:0.65rem">(裝備中)</span>` : '';
-      const lvStr = item.bonus?.level > 1 ? `+${item.bonus.level} ` : '';
-      return `<div class="inv-item" onclick="openEnhance('${item._id}', ${item.isEquipped})">
-        <span class="inv-item-icon">${icon}</span>
-        <span class="inv-item-name rarity-${item.rarity}">${lvStr}${item.name}${equipTag}</span>
-        <span class="inv-item-type" style="color:var(--sky)">點擊強化</span>
+      const equipTag = item.isEquipped ? `<span style="color:var(--gold);font-size:0.65rem;margin-left:4px">(裝備中)</span>` : '';
+      const lv = item.bonus?.level || 1;
+      
+      // ✅ 乾淨過濾系統變數 (level, base)，只顯示純粹的屬性
+      const bonusStr = item.bonus ? Object.entries(item.bonus).filter(([k,v]) => v && k !== 'level' && k !== 'base').map(([k,v]) => `${k}+${v}`).join(' ') : '';
+      
+      return `<div class="inv-item" onclick="openEnhance('${item._id}', ${item.isEquipped})" style="text-align:left;padding:10px;">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:1.8rem">${icon}</span>
+          <div style="flex:1">
+            <div class="rarity-${item.rarity}" style="font-family:'DotGothic16',monospace;font-size:0.85rem;margin-bottom:2px">${item.name}${equipTag}</div>
+            <div style="color:var(--sky);font-family:'DotGothic16',monospace;font-size:0.7rem">Lv.${lv} | ${bonusStr}</div>
+          </div>
+        </div>
       </div>`;
     }).join('');
   }
 }
 
-// ✅ 渲染升級工具頁面
 function renderToolGrids() {
     const grid = document.getElementById('craft-grid-tools');
     if (!grid) return;
@@ -124,7 +132,7 @@ function openToolUpgrade(id) {
         card.querySelector('.flex-btns').innerHTML = `<button class="btn btn-full btn-ghost" onclick="closeCraft()">關閉</button>`;
     } else {
         const reqStr = Object.entries(d.baseReq).map(([k, v]) => `${k} ×${v * lv}`).join(' · ');
-        document.getElementById('craft-result-tools-body').innerHTML = `升級至 <b>Lv.${lv+1}</b><br>所需素材：${reqStr}`;
+        document.getElementById('craft-result-tools-body').innerHTML = `升級後：<b style="color:var(--gold)">Lv.${lv+1}</b><br>所需素材：${reqStr}`;
         card.querySelector('.flex-btns').innerHTML = `
           <button class="btn btn-full" onclick="doToolUpgrade()">確認升級</button>
           <button class="btn btn-full btn-ghost" onclick="closeCraft()">取消</button>`;
@@ -194,7 +202,20 @@ function openEnhance(id, isEquipped) {
     } else {
         let goldCost = lv * 100;
         let oreCost = Math.ceil(lv / 5);
-        document.getElementById('craft-result-body').innerHTML = `升級至 <b>+${lv+1}</b><br>需要消耗：<b>魔晶礦石 ×${oreCost}</b> 與 <b>${goldCost} 金幣</b>。<br><span style="color:var(--green)">100% 成功機率！</span>`;
+        
+        // ✅ 計算並在一行內顯示升級後的屬性
+        let nextLv = lv + 1;
+        let nextBonusStr = [];
+        let baseStats = item.bonus?.base || item.bonus || {};
+        for (let k in baseStats) {
+            if (k !== 'level' && k !== 'base') {
+                let nextVal = Math.floor(baseStats[k] * (1 + (nextLv - 1) * 0.1));
+                nextBonusStr.push(`${k}+${nextVal}`);
+            }
+        }
+        let nextStats = nextBonusStr.join(' ');
+
+        document.getElementById('craft-result-body').innerHTML = `升級後：<b style="color:var(--gold)">Lv.${nextLv} (${nextStats})</b><br>消耗：魔晶礦石 ×${oreCost} · ${goldCost} 金幣`;
         card.querySelector('.flex-btns').innerHTML = `
           <button class="btn btn-full" onclick="doEnhance()">確認強化</button>
           <button class="btn btn-full btn-ghost" onclick="closeCraft()">取消</button>`;
