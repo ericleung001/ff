@@ -4,7 +4,18 @@
 const JOB_ICONS = {mage:'🧙', warrior:'⚔️', rogue:'🗡️', priest:'✨'};
 const JOB_NAMES = {mage:'法師', warrior:'勇者', rogue:'盜賊', priest:'聖職者'};
 
-// 統一的技能資料庫 (每個職業 9 個技能，樹狀解鎖)
+const SLOT_NAMES = {
+  head: '頭部', headgear: '頭飾', neck: '頸部',
+  weapon: '武器', armor: '身體', hand: '手部',
+  foot: '腳部', accessory_l: '左手飾物', accessory_r: '右手飾物'
+};
+
+const SLOT_ICONS = {
+  head: '🪖', headgear: '👑', neck: '📿',
+  weapon: '⚔️', armor: '🛡️', hand: '🧤',
+  foot: '👞', accessory_l: '💍', accessory_r: '💍'
+};
+
 const JOB_SKILLS_DB = {
   mage: [
     {id:'basic_atk', name:'魔法箭', icon:'🪄', cost:0, dmg:'4-8+INT', spCost:1, req:null, desc:'基礎魔法攻擊'},
@@ -66,13 +77,24 @@ const HOUSE_CONFIG = {
   sawmill: { name:'木材廠', icon:'🪵', gatherBonus:{ wood:{ xp:35, gold:50, rare:15 } } },
 };
 
+// ✅ 新增了 category 分類以支援新的分頁 UI，並加入了「煮食」
 const CRAFT_DATA = {
-  sword:     { name:'鐵劍',      icon:'⚔️', type:'weapon', req:'鐵礦 ×5 · 木材 ×2',      result:'ATK +12',           panel:'craft' },
-  bow:       { name:'獵人弓',    icon:'🏹', type:'weapon', req:'木材 ×8 · 獸皮 ×3',      result:'ATK +10 · 射程遠',  panel:'craft' },
-  staff:     { name:'魔法法杖',  icon:'🪄', type:'weapon', req:'魔晶礦石 ×4 · 木材 ×3',  result:'INT +15 · MP +20',  panel:'craft' },
-  dagger:    { name:'暗影短刃',  icon:'🗡️', type:'weapon', req:'鐵礦 ×3 · 獸皮 ×4',      result:'AGI +8 · 會心 +5%', panel:'craft' },
-  shield:    { name:'鋼鐵盾牌',  icon:'🛡️', type:'armor',  req:'鐵礦 ×8 · 木材 ×2',      result:'DEF +18',           panel:'craft' },
-  armor:     { name:'皮製護甲',  icon:'🧥', type:'armor',  req:'獸皮 ×10 · 草藥 ×3',     result:'DEF +10 · HP +30',  panel:'craft' },
+  // 煮食 (cook)
+  bread:     { name:'烤麵包',    icon:'🍞', type:'consumable', req:'小麥 ×3', result:'回復 30 HP', category:'cook', panel:'craft' },
+  hp_pot:    { name:'生命藥水',  icon:'🧪', type:'consumable', req:'藥草 ×3 · 細小寶石 ×1', result:'回復 100 HP', category:'cook', panel:'craft' },
+  mp_pot:    { name:'魔力藥水',  icon:'🧪', type:'consumable', req:'藥草 ×3 · 藍色水滴 ×1', result:'回復 50 MP', category:'cook', panel:'craft' },
+  fish_soup: { name:'鮮魚湯',    icon:'🥣', type:'consumable', req:'鯉魚 ×1 · 草藥 ×1', result:'回復 50 HP/MP', category:'cook', panel:'craft' },
+  // 武器 (weapon)
+  sword:     { name:'鐵劍',      icon:'⚔️', type:'weapon', req:'鐵礦 ×5 · 木材 ×2',      result:'ATK +12', category:'weapon', panel:'craft' },
+  bow:       { name:'獵人弓',    icon:'🏹', type:'weapon', req:'木材 ×8 · 獸皮 ×3',      result:'ATK +10 · 射程遠', category:'weapon', panel:'craft' },
+  staff:     { name:'魔法法杖',  icon:'🪄', type:'weapon', req:'魔晶礦石 ×4 · 木材 ×3',  result:'INT +15 · MP +20', category:'weapon', panel:'craft' },
+  dagger:    { name:'暗影短刃',  icon:'🗡️', type:'weapon', req:'鐵礦 ×3 · 獸皮 ×4',      result:'AGI +8 · 會心 +5%', category:'weapon', panel:'craft' },
+  // 防具 (armor)
+  shield:    { name:'鋼鐵盾牌',  icon:'🛡️', type:'armor',  req:'鐵礦 ×8 · 木材 ×2',      result:'DEF +18', category:'armor', panel:'craft' },
+  armor:     { name:'皮製護甲',  icon:'🧥', type:'armor',  req:'獸皮 ×10 · 草藥 ×3',     result:'DEF +10 · HP +30', category:'armor', panel:'craft' },
+  cloth_cap: { name:'精製布帽',  icon:'🪖', type:'head',   req:'獸皮 ×5 · 草藥 ×2',      result:'DEF +5 · 回避 +2%', category:'armor', panel:'craft' },
+  boots:     { name:'輕巧皮靴',  icon:'👞', type:'foot',   req:'獸皮 ×6 · 木材 ×1',      result:'AGI +5 · 閃避 +3%', category:'armor', panel:'craft' },
+  // 工具 (舊有)
   pickaxe:   { name:'鐵製鶴嘴鋤',icon:'⛏️', type:'tool',   req:'鐵礦 ×6 · 木材 ×3',      result:'採礦效率 +30%',     panel:'tools' },
   axe:       { name:'強化斧頭',  icon:'🪓', type:'tool',   req:'鐵礦 ×4 · 木材 ×5',      result:'伐木效率 +40%',     panel:'tools' },
   rod:       { name:'精良釣魚竿',icon:'🎣', type:'tool',   req:'木材 ×6 · 鯉魚 ×3',      result:'釣魚效率 +35%',     panel:'tools' },
