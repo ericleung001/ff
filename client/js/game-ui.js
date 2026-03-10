@@ -187,14 +187,20 @@ function refreshSidebar() {
     }).join('');
   }
 
+  // ✅ 更新裝備清單，包含 9 個位置
   const equip = c.equipment||[];
-  const slots = ['weapon','armor','accessory'];
-  const slotNames = {weapon:'武器',armor:'護甲',accessory:'飾品'};
+  const slots = ['head', 'headgear', 'neck', 'weapon', 'armor', 'hand', 'foot', 'accessory_l', 'accessory_r'];
+  const slotNames = {
+    head: '頭部', headgear: '頭飾', neck: '頸部',
+    weapon: '武器', armor: '身體', hand: '手部',
+    foot: '腳部', accessory_l: '左飾', accessory_r: '右飾'
+  };
+
   const equipHtml = slots.map(slot=>{
     const e = equip.find(x=>x.slot===slot);
     const bonusStr = e?.bonus ? Object.entries(e.bonus).filter(([,v])=>v).map(([k,v])=>`${k}+${v}`).join(' ') : '';
     return `<div class="equip-slot">
-      <span class="equip-slot-lbl">${slotNames[slot]}</span>
+      <span class="equip-slot-lbl" style="width:36px">${slotNames[slot]}</span>
       <span class="rarity-${e?.rarity||'common'}">${e?.name||'─'}</span>
       <div style="flex:1"></div>
       ${bonusStr ? `<span style="font-size:0.6rem;color:var(--green);margin-right:4px">${bonusStr}</span>` : ''}
@@ -246,14 +252,18 @@ function refreshSidebar() {
 function openEquipChange(slot) {
   if(!state.char) return;
   const inv = (state.char.inventory||[]).filter(i=>i.slot===slot || i.type===slot);
-  const slotNames = {weapon:'武器',armor:'護甲',accessory:'飾品'};
+  const slotNames = {
+    head: '頭部', headgear: '頭飾', neck: '頸部',
+    weapon: '武器', armor: '身體', hand: '手部',
+    foot: '腳部', accessory_l: '左手飾物', accessory_r: '右手飾物'
+  };
   
   let html = `<div class="modal-overlay" id="equip-modal" onclick="if(event.target.id==='equip-modal')closeEquipModal()">
     <div class="modal-box">
       <div class="modal-title">更換${slotNames[slot]||slot}</div>`;
       
   if(inv.length === 0){
-    html += `<div class="modal-empty">背包中沒有可裝備的${slotNames[slot]}</div>`;
+    html += `<div class="modal-empty">背包中沒有可裝備的${slotNames[slot]||slot}</div>`;
   } else {
     html += inv.map(item => {
       const bonusStr = item.bonus ? Object.entries(item.bonus).filter(([,v])=>v).map(([k,v])=>`${k}+${v}`).join(' ') : '';
@@ -386,7 +396,6 @@ setInterval(() => {
     return;
   }
   
-  // 如果在戰鬥中，暫停自然回復
   if (state.combat && state.combat.active) {
     if(statusEl) statusEl.innerHTML = '<span style="color:var(--red)">⚔️ 戰鬥中...暫停回復</span>';
     return;
@@ -395,7 +404,6 @@ setInterval(() => {
   const effHp = c.effMaxHp || c.maxHp || 100;
   const effMp = c.effMaxMp || c.maxMp || 60;
   
-  // 改為每 1 秒回復 5% (約 20 秒回滿)
   const hpRegen = Math.max(1, Math.floor(effHp * 0.05));
   const mpRegen = Math.max(1, Math.floor(effMp * 0.05));
   
@@ -408,14 +416,10 @@ setInterval(() => {
     
     refreshSidebar();
     
-    // 隨機保存至伺服器 (大約每 10 秒存一次，避免太頻繁發 API)
     if (Math.random() < 0.1) {
-      try { 
-        if(AC_API && AC_API.saveHpMp) AC_API.saveHpMp(c.id, c.hp, c.mp); 
-      } catch(e){}
+      try { if(AC_API && AC_API.saveHpMp) AC_API.saveHpMp(c.id, c.hp, c.mp); } catch(e){}
     }
 
-    // 計算剩餘時間
     const hpTicks = Math.ceil((effHp - c.hp) / hpRegen);
     const mpTicks = Math.ceil((effMp - c.mp) / mpRegen);
     const maxTicks = Math.max(hpTicks, mpTicks);
@@ -424,7 +428,6 @@ setInterval(() => {
         if(statusEl) statusEl.innerHTML = `⏳ 休息中... 預計 <span style="color:var(--gold)">${maxTicks}秒</span> 後全滿`;
     } else {
         if(statusEl) statusEl.innerHTML = `✨ 狀態絕佳`;
-        // 當剛好滿血時，觸發一次儲存
         try { if(AC_API && AC_API.saveHpMp) AC_API.saveHpMp(c.id, c.hp, c.mp); } catch(e){}
     }
   } else {
