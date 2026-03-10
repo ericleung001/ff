@@ -43,13 +43,20 @@ const updateStory   = (id, idx)     => api('PATCH', `/api/characters/${id}/story
 const soloReward    = (id, data)    => api('POST',  `/api/characters/${id}/solo-reward`, data);
 const saveHpMp      = (id, hp, mp) => api('POST',  `/api/characters/${id}/save-hp`, { hp, mp });
 
-// ✅ 確保 extra 裡的 targetMonster 被正確傳給後端
+// ✅ 新增：採集獲得物品 API
+const gatherReward  = (id, data)    => api('POST',  `/api/characters/${id}/gather`, data);
+
 const createRoom    = (characterId, dungeonId=1, maxPlayers=4, isPrivate=false, title='', extra={}) =>
   api('POST', '/api/dungeons/rooms', { characterId, dungeonId, maxPlayers, isPrivate, title, targetMonster: extra.targetMonster });
 const joinRoom      = (roomCode, characterId)  => api('POST', '/api/dungeons/rooms/join', { roomCode, characterId });
 const getRoomInfo   = (code)        => api('GET',   `/api/dungeons/rooms/${code}`);
 const listRooms     = ()            => api('GET',   '/api/dungeons/rooms');
 const setReady      = (roomId, characterId) => api('PATCH', `/api/dungeons/rooms/${roomId}/ready`, { characterId });
+
+const craftItem       = (id, craftId) => api('POST', `/api/characters/${id}/craft`, { craftId });
+const disassembleItem = (id, invId)   => api('POST', `/api/characters/${id}/disassemble`, { invId });
+const upgradeTool     = (id, toolId)  => api('POST', `/api/characters/${id}/upgrade-tool`, { toolId });
+const enhanceItem     = (id, invId, isEquipped) => api('POST', `/api/characters/${id}/enhance`, { invId, isEquipped });
 
 function connectSocket() {
   if (_socket?.connected) return _socket;
@@ -62,7 +69,8 @@ window.AC_API = {
   getToken, setToken, clearToken,
   register, login, logout,
   getChars, createChar, getChar, learnSkill, equipItem, updateStory,
-  soloReward, saveHpMp,
+  soloReward, saveHpMp, gatherReward,
   createRoom, joinRoom, getRoomInfo, listRooms, setReady,
+  craftItem, disassembleItem, upgradeTool, enhanceItem,
   connectSocket, getSocket,
 };
