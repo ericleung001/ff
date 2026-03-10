@@ -42,6 +42,12 @@ function startGather(type) {
   const log = document.getElementById('gather-log');
   if(log) log.innerHTML = '';
 
+  const toolIdMap = { farm: 'tool_hoe', fish: 'tool_rod', wood: 'tool_axe', mine: 'tool_pickaxe' };
+  const toolLv = (state.char.learnedSkills || {})[toolIdMap[type]] || 1;
+  
+  const tickMs = Math.max(500, cfg.tickMs - (toolLv - 1) * 20);
+  const yieldMult = 1 + (toolLv - 1) * 0.02;
+
   _gatherTimer = setInterval(()=>{
     state.gather.ticks++;
     const prog = ((state.gather.ticks%10)/10)*100;
@@ -49,22 +55,31 @@ function startGather(type) {
 
     if(state.gather.ticks%10===0) {
       const b       = getGatherBonus(type);
-      const xp      = Math.round(cfg.xpPer*(1+b.xpBonus/100));
-      const gold    = Math.round(cfg.goldPer*(1+b.goldBonus/100));
+      const xp      = Math.round(cfg.xpPer * (1+b.xpBonus/100) * yieldMult);
+      const gold    = Math.round(cfg.goldPer * (1+b.goldBonus/100) * yieldMult);
       const isRare  = Math.random()*100 < (5+b.rareBonus/4);
       const items   = cfg.items;
       const item    = isRare ? items[items.length-1] : items[Math.floor(Math.random()*(items.length-1))];
-
-      state.char.xp   = (state.char.xp||0)   + xp;
-      state.char.gold = (state.char.gold||0)  + gold;
-      refreshSidebar();
 
       const msg = `${cfg.icon} 獲得【${item}】· +${xp} EXP · +${gold} G${isRare?' ✦稀有！':''}`;
       if(log){ const li=document.createElement('div'); li.textContent=msg; log.prepend(li); }
       document.getElementById('gather-prog-txt').textContent = `已採集 ${state.gather.ticks/10} 次`;
       notify(msg.slice(0,32),'ok');
+
+      // ✅ 呼叫 API 將採集到的素材存入資料庫
+      if (AC_API && AC_API.gatherReward) {
+         AC_API.gatherReward(state.char.id, { xp, gold, item }).then(res => {
+             if (res.character) state.char = res.character;
+             if (typeof refreshSidebar === 'function') refreshSidebar();
+             if (res.leveledUp) notify('🎉 升級了！', 'ok');
+         }).catch(e => console.error(e));
+      } else {
+         state.char.xp   = (state.char.xp||0)   + xp;
+         state.char.gold = (state.char.gold||0)  + gold;
+         if (typeof refreshSidebar === 'function') refreshSidebar();
+      }
     }
-  }, Math.round(cfg.tickMs/10));
+  }, Math.round(tickMs/10));
   state.gather.interval = _gatherTimer;
 }
 
