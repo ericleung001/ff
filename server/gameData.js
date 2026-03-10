@@ -7,7 +7,6 @@ const JOB_BASE = {
   priest:  { maxHp: 90,  maxMp: 100, stats: { STR:6,  INT:10, AGI:8,  WIS:16, DEF:9  } },
 };
 
-// ✅ 補齊所有職業的 9 招技能，並設定正確的 type (heal, magic, physical, holy)
 const JOB_SKILLS = {
   mage: [
     {id:'basic_atk', name:'魔法箭', cost:0, baseDmg:[4,8], type:'magic'},
@@ -90,6 +89,30 @@ const LOOT_TABLE = {
   abyss_crown:  { name:'深淵王冠',     type:'accessory',rarity:'legend',bonus:{INT:10,WIS:10,maxMp:40} },
 };
 
+const CRAFT_DATA = {
+  bread:     { name:'烤麵包',    icon:'🍞', type:'consumable', req:'小麥 ×3', mats:{'小麥':3}, result:'回復 30 HP', category:'cook', rarity:'common', bonus:{} },
+  hp_pot:    { name:'生命藥水',  icon:'🧪', type:'consumable', req:'藥草 ×3 · 史萊姆核心 ×1', mats:{'藥草':3, '史萊姆核心':1}, result:'回復 100 HP', category:'cook', rarity:'common', bonus:{} },
+  mp_pot:    { name:'魔力藥水',  icon:'🧪', type:'consumable', req:'藥草 ×3 · 蝙蝠翅膀 ×1', mats:{'藥草':3, '蝙蝠翅膀':1}, result:'回復 50 MP', category:'cook', rarity:'rare', bonus:{} },
+  fish_soup: { name:'鮮魚湯',    icon:'🥣', type:'consumable', req:'鯉魚 ×1 · 藥草 ×1', mats:{'鯉魚':1, '藥草':1}, result:'回復 50 HP/MP', category:'cook', rarity:'rare', bonus:{} },
+  sword:     { name:'鐵劍',      icon:'⚔️', type:'weapon', req:'鐵礦 ×5 · 普通木材 ×2', mats:{'鐵礦':5, '普通木材':2}, result:'STR +12', category:'weapon', rarity:'common', bonus:{STR:12} },
+  bow:       { name:'獵人弓',    icon:'🏹', type:'weapon', req:'普通木材 ×8 · 狼牙 ×3', mats:{'普通木材':8, '狼牙':3}, result:'STR +10 · AGI +5', category:'weapon', rarity:'common', bonus:{STR:10, AGI:5} },
+  staff:     { name:'魔法法杖',  icon:'🪄', type:'weapon', req:'魔晶礦石 ×4 · 普通木材 ×3', mats:{'魔晶礦石':4, '普通木材':3}, result:'INT +15 · maxMp +20', category:'weapon', rarity:'rare', bonus:{INT:15, maxMp:20} },
+  dagger:    { name:'暗影短刃',  icon:'🗡️', type:'weapon', req:'鐵礦 ×3 · 蝙蝠翅膀 ×4', mats:{'鐵礦':3, '蝙蝠翅膀':4}, result:'AGI +12', category:'weapon', rarity:'rare', bonus:{AGI:12} },
+  shield:    { name:'鋼鐵盾牌',  icon:'🛡️', type:'armor',  req:'鐵礦 ×8 · 普通木材 ×2', mats:{'鐵礦':8, '普通木材':2}, result:'DEF +18', category:'armor', rarity:'common', bonus:{DEF:18} },
+  armor:     { name:'皮製護甲',  icon:'🧥', type:'armor',  req:'狼牙 ×5 · 藥草 ×3', mats:{'狼牙':5, '藥草':3}, result:'DEF +10 · maxHp +30', category:'armor', rarity:'common', bonus:{DEF:10, maxHp:30} },
+  cloth_cap: { name:'精製布帽',  icon:'🪖', type:'head',   req:'蜘蛛絲 ×5 · 藥草 ×2', mats:{'蜘蛛絲':5, '藥草':2}, result:'DEF +5 · AGI +2', category:'armor', rarity:'common', bonus:{DEF:5, AGI:2} },
+  boots:     { name:'輕巧皮靴',  icon:'👞', type:'foot',   req:'枯骨 ×6 · 普通木材 ×1', mats:{'枯骨':6, '普通木材':1}, result:'AGI +5 · DEF +2', category:'armor', rarity:'common', bonus:{AGI:5, DEF:2} },
+};
+
+const TOOL_DATA = {
+  tool_pickaxe: { name: '鐵製鶴嘴鋤', icon: '⛏️', baseReq: {'鐵礦': 2, '普通木材': 1}, desc: '提升採礦速度與產量' },
+  tool_axe:     { name: '強化斧頭',   icon: '🪓', baseReq: {'鐵礦': 1, '普通木材': 2}, desc: '提升伐木速度與產量' },
+  tool_rod:     { name: '精良釣魚竿', icon: '🎣', baseReq: {'普通木材': 2, '蜘蛛絲': 1}, desc: '提升釣魚速度與產量' },
+  tool_hoe:     { name: '金屬鋤頭',   icon: '🌾', baseReq: {'鐵礦': 1, '普通木材': 1}, desc: '提升耕田速度與產量' },
+  tool_cook:    { name: '煮食工具',   icon: '🍳', baseReq: {'鐵礦': 2, '枯骨': 1}, desc: '提升料理製作時的屬性加成' },
+  tool_enhance: { name: '強化工具',   icon: '⚒️', baseReq: {'魔晶礦石': 1, '鐵礦': 2}, desc: '解鎖高級裝備，提升裝備強化上限(最高Lv100)' }
+};
+
 function calcDamage(attacker, skill, defenderDef = 0) {
   const [min, max] = skill.baseDmg || [5, 10];
   if (min === 0 && max === 0) return { dmg: 0, isCrit: false }; 
@@ -108,4 +131,4 @@ function calcHeal(healer) {
   return Math.floor(base * (0.9 + Math.random() * 0.2));
 }
 
-module.exports = { JOB_BASE, JOB_SKILLS, ENEMIES, LOOT_TABLE, calcDamage, calcHeal };
+module.exports = { JOB_BASE, JOB_SKILLS, ENEMIES, LOOT_TABLE, CRAFT_DATA, TOOL_DATA, calcDamage, calcHeal };
