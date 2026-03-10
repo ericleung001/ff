@@ -9,12 +9,11 @@
 <script src="/js/api.js"></script>
 <style>
 :root {
-  /* ── DQ Palette: royal navy + deep gold + crimson ── */
   --bg:      #0a0e1a;
   --bg2:     #0f1628;
   --bg3:     #141d34;
   --bg4:     #1a2540;
-  --win:     #0d1830;      /* dialog window bg */
+  --win:     #0d1830;
   --win2:    #162040;
 
   --border:     #2a4070;
@@ -41,7 +40,6 @@
   --text-dim:#6880a8;
   --text-hi: #f0f4ff;
 
-  /* DQ window chrome */
   --win-border: 4px solid var(--border-gold);
   --win-shadow: 0 0 0 2px var(--gold-dim), 0 8px 32px rgba(0,0,0,.8), inset 0 1px 0 rgba(240,192,64,.08);
 
@@ -61,7 +59,6 @@ body{
   cursor:default;
 }
 
-/* ── Starfield background ── */
 body::before{
   content:'';
   position:fixed;inset:0;
@@ -81,7 +78,6 @@ body::before{
   z-index:0;
 }
 
-/* Subtle scan-line texture */
 body::after{
   content:'';
   position:fixed;inset:0;
@@ -97,8 +93,6 @@ body::after{
 }
 @keyframes scanPan{from{background-position:0 0}to{background-position:0 40px}}
 
-/* ─ DQ WINDOW mixin ─
-   The iconic thick-border window with corner ornaments */
 .dq-win{
   background:var(--win);
   border:var(--win-border);
@@ -106,7 +100,6 @@ body::after{
   box-shadow:var(--win-shadow);
   position:relative;
 }
-/* Corner diamond ornaments */
 .dq-win::before,.dq-win::after{
   content:'◆';
   position:absolute;
@@ -117,7 +110,6 @@ body::after{
 .dq-win::before{top:-10px;left:-10px}
 .dq-win::after{bottom:-10px;right:-10px}
 
-/* ─ SCREENS ─ */
 .screen{
   display:none;min-height:100vh;
   flex-direction:column;align-items:center;justify-content:center;
@@ -127,7 +119,6 @@ body::after{
 .screen-full{display:none;min-height:100vh;position:relative;z-index:2}
 .screen-full.active{display:flex}
 
-/* ─ BUTTONS — DQ menu style ─ */
 .btn{
   font-family:'Noto Serif TC',serif;
   font-size:1rem;font-weight:700;
@@ -177,7 +168,6 @@ body::after{
 .btn-sm{font-size:.88rem;padding:9px 18px;min-height:40px}
 .btn-full{width:100%;text-align:left}
 
-/* ─ INPUTS ─ */
 .inp{
   width:100%;
   background:var(--bg3);
@@ -207,7 +197,6 @@ body::after{
 }
 .inp-group{margin-bottom:18px}
 
-/* ─ TYPOGRAPHY ─ */
 .title-xl{
   font-family:'DotGothic16',monospace;
   font-size:clamp(2.4rem,8vw,4.5rem);
@@ -255,7 +244,6 @@ body::after{
   padding-left:16px;
 }
 
-/* ─ PANEL (DQ window style) ─ */
 .panel{
   background:var(--win);
   border:3px solid var(--border-gold);
@@ -265,7 +253,6 @@ body::after{
 }
 .panel-blue{border-color:var(--border-hi);box-shadow:0 0 0 1px var(--border),0 8px 32px rgba(0,0,0,.8)}
 
-/* ─ BARS ─ */
 .bar-wrap{margin-bottom:9px}
 .bar-label{display:flex;justify-content:space-between;font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--gold);margin-bottom:4px;letter-spacing:1px}
 .bar-track{
@@ -280,13 +267,11 @@ body::after{
 .bar-mp  .bar-fill{background:linear-gradient(90deg,#1830a0,#2870f0,#60a8f8)}
 .bar-xp  .bar-fill{background:linear-gradient(90deg,var(--gold-dim),var(--gold),#f8e080)}
 
-/* ─ STAT ROW ─ */
 .stat-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(42,64,112,.5)}
 .stat-row:last-child{border:none}
 .stat-key{font-family:'DotGothic16',monospace;font-size:.8rem;color:var(--gold);letter-spacing:1px}
 .stat-val{font-family:'DotGothic16',monospace;font-size:.9rem;color:var(--white)}
 
-/* ─ SECTION HEAD ─ */
 .sec{
   font-family:'DotGothic16',monospace;
   font-size:.75rem;letter-spacing:4px;
@@ -296,7 +281,6 @@ body::after{
 }
 .sec::before{content:'◆ '}
 
-/* ─ NOTIFY ─ */
 #notify{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:90%;max-width:380px}
 .notif{
   background:var(--win);
@@ -315,7 +299,6 @@ body::after{
 .notif.info{border-color:var(--border-gold-hi);color:var(--gold)}
 @keyframes notifIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
 
-/* ═══════════ TITLE SCREEN ═══════════ */
 #s-title{
   background:
     radial-gradient(ellipse 80% 60% at 50% 30%,rgba(30,50,100,.5) 0%,transparent 70%),
@@ -332,7 +315,6 @@ body::after{
 .title-lore-box{max-width:480px;margin:28px auto}
 .title-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:32px}
 
-/* Blinking "press start" style */
 .title-press{
   font-family:'DotGothic16',monospace;
   font-size:.85rem;color:var(--white);
@@ -341,7 +323,6 @@ body::after{
 }
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
-/* ═══════════ AUTH ═══════════ */
 #s-auth{background:var(--bg)}
 .auth-box{
   width:100%;max-width:400px;
@@ -352,7 +333,6 @@ body::after{
   box-shadow:var(--win-shadow);
   position:relative;
 }
-/* Four-corner ornaments on auth box */
 .auth-box::before,.auth-box::after{content:'◆';position:absolute;color:var(--gold);font-size:.9rem}
 .auth-box::before{top:-11px;left:-11px}
 .auth-box::after{bottom:-11px;right:-11px}
@@ -374,7 +354,6 @@ body::after{
   box-shadow:0 0 8px var(--gold-glow);
 }
 
-/* ═══════════ CHAR SELECT ═══════════ */
 #s-chars{background:var(--bg)}
 .char-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;max-width:700px;width:100%;margin-bottom:20px}
 .char-card{
@@ -403,7 +382,6 @@ body::after{
 .char-card-new{border-style:dashed;border-color:var(--border);background:var(--bg2)}
 .char-card-new:hover{border-color:var(--border-gold)}
 
-/* ═══════════ CHAR CREATE ═══════════ */
 #s-create{background:var(--bg);justify-content:flex-start;padding-top:28px}
 .job-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:24px}
 @media(min-width:600px){.job-grid{grid-template-columns:repeat(4,1fr)}}
@@ -422,19 +400,14 @@ body::after{
 .job-desc{font-size:.82rem;color:var(--silver);line-height:1.5}
 .job-stat{font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--sky);margin-top:6px}
 
-/* ═══════════════════════════════════════════════
-   MAIN GAME LAYOUT  (desktop 3-col + bottom chat)
-═══════════════════════════════════════════════ */
 #s-game{
   flex-direction:column;
   height:100vh;overflow:hidden;
 }
-/* outer row: left nav + center + right panel */
 .game-body{
   flex:1;display:flex;flex-direction:row;overflow:hidden;min-height:0;
 }
 
-/* ── LEFT COLLAPSIBLE MENU ── */
 .menu-nav{
   width:200px;
   background:var(--win);
@@ -446,7 +419,6 @@ body::after{
 }
 .menu-nav.collapsed{ width:52px; }
 
-/* toggle arrow tab on right edge */
 .menu-toggle{
   position:absolute;top:50%;right:-14px;transform:translateY(-50%);
   width:14px;height:44px;
@@ -509,7 +481,6 @@ body::after{
 .menu-btn .micon{ font-size:1.15rem;flex-shrink:0;line-height:1;min-width:20px;text-align:center; }
 .menu-btn .mlabel{ transition:opacity .18s;overflow:hidden; }
 .menu-nav.collapsed .menu-btn .mlabel{ opacity:0;width:0;pointer-events:none; }
-/* tooltip on collapsed */
 .menu-nav.collapsed .menu-btn:hover::after{
   content:attr(data-tip);
   position:absolute;left:54px;top:50%;transform:translateY(-50%);
@@ -522,13 +493,11 @@ body::after{
 .menu-divider{height:1px;background:var(--border);margin:5px 10px;}
 .menu-bottom{margin-top:auto;}
 
-/* ── CENTER CONTENT AREA ── */
 .content-area{
   flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;
   background:var(--bg);position:relative;
 }
 
-/* ★★★ 修改：將最頂 Header 設為純黑底色 ★★★ */
 .content-hdr{
   background:#000000;
   border-bottom:2px solid var(--border-gold);
@@ -545,7 +514,6 @@ body::after{
 .content-panel{display:none;animation:entryIn .25s ease forwards}
 .content-panel.active{display:block}
 
-/* ── RIGHT COLLAPSIBLE PLAYER PANEL ── */
 .player-panel{
   width:220px;
   background:var(--win);
@@ -576,12 +544,11 @@ body::after{
 .player-inner{
   display:flex;flex-direction:column;
   padding:12px 10px;flex:1;overflow-y:auto;overflow-x:hidden;
-  min-width:220px;/* prevents content squish during transition */
+  min-width:220px;
 }
 .player-inner::-webkit-scrollbar{width:3px}
 .player-inner::-webkit-scrollbar-thumb{background:var(--border-gold);border-radius:2px}
 
-/* character portrait */
 .char-portrait{
   width:70px;height:70px;margin:0 auto 8px;
   border:3px solid var(--border-gold);
@@ -595,7 +562,6 @@ body::after{
 .char-name-sb{font-family:'DotGothic16',monospace;font-size:.88rem;color:var(--gold);text-align:center;margin-bottom:2px;letter-spacing:2px}
 .char-job-sb{font-family:'DotGothic16',monospace;font-size:.65rem;color:var(--silver);text-align:center;margin-bottom:10px;letter-spacing:2px}
 
-/* collapsible sections inside player panel */
 .pp-section{margin-bottom:4px;}
 .pp-sec-hdr{
   display:flex;align-items:center;justify-content:space-between;
@@ -609,7 +575,6 @@ body::after{
 .pp-sec-body{overflow:hidden;transition:max-height .22s ease;max-height:400px;}
 .pp-sec-body.closed{max-height:0;}
 
-/* items inside player panel */
 .skill-item{
   display:flex;justify-content:space-between;align-items:center;
   padding:4px 8px;margin-bottom:2px;
@@ -623,7 +588,7 @@ body::after{
   padding:4px 8px;margin-bottom:2px;
   background:var(--bg3);border:1px solid var(--border);border-radius:2px;font-size:.76rem;
 }
-.equip-slot-lbl{font-family:'DotGothic16',monospace;color:var(--text-dim);font-size:.62rem;width:30px;flex-shrink:0;letter-spacing:1px;}
+.equip-slot-lbl{font-family:'DotGothic16',monospace;color:var(--text-dim);font-size:.62rem;flex-shrink:0;letter-spacing:1px;}
 .rarity-common{color:var(--silver)}
 .rarity-rare{color:var(--sky)}
 .rarity-epic{color:var(--purple)}
@@ -639,14 +604,13 @@ body::after{
 .party-slot{background:var(--bg3);border:1px dashed var(--border);border-radius:2px;padding:5px 8px;text-align:center;font-family:'DotGothic16',monospace;font-size:.7rem;color:var(--text-dim);margin-bottom:3px;letter-spacing:1px}
 .party-slot.filled{border-style:solid;border-color:var(--border-gold)}
 
-/* ── BOTTOM CHAT BAR ── */
 .chat-bar{
   border-top:2px solid var(--border-gold);
   background:var(--win);
   flex-shrink:0;
   overflow:hidden;
   transition:height .22s cubic-bezier(.4,0,.2,1);
-  height:36px;/* collapsed: just header visible */
+  height:36px;
 }
 .chat-bar.expanded{ height:220px; }
 .chat-bar-hdr{
@@ -693,11 +657,6 @@ body::after{
 }
 .chat-badge.show{display:flex}
 
-/* ══════════════════════════════════════
-   COMBAT PANEL  — full redesign
-══════════════════════════════════════ */
-
-/* ── Mode tabs (單人 / 多人) ── */
 .combat-mode-tabs{
   display:flex;gap:0;margin-bottom:18px;
   border:2px solid var(--border-gold);border-radius:2px;overflow:hidden;
@@ -718,7 +677,6 @@ body::after{
 .combat-mode-pane{ display:none; }
 .combat-mode-pane.active{ display:block; }
 
-/* ── Town grid ── */
 .town-grid{
   display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
   gap:12px;margin-bottom:18px;
@@ -767,7 +725,6 @@ body::after{
   color:var(--text-dim);letter-spacing:1px;margin-top:2px;
 }
 
-/* ── Monster list ── */
 .monster-section{
   background:var(--win2);border:2px solid var(--border-gold);
   border-radius:2px;margin-bottom:18px;overflow:hidden;
@@ -837,16 +794,13 @@ body::after{
   background:var(--gold);color:var(--bg);
   box-shadow:0 0 12px var(--gold-glow);
 }
-/* always show on mobile */
 @media(max-width:700px){
   .monster-fight-btn{ opacity:1;transform:none; }
 }
 
-/* difficulty stars */
 .diff-stars{ color:var(--gold);font-size:.72rem;letter-spacing:-1px; }
 .diff-stars.hard{ color:var(--red); }
 
-/* ── BOSS row ── */
 .monster-row.boss{
   background:rgba(192,40,32,.06);
   border-left:3px solid var(--red);
@@ -860,7 +814,6 @@ body::after{
   box-shadow:0 0 12px rgba(192,40,32,.4);
 }
 
-/* ── Recent combat log ── */
 .combat-log-wrap{
   background:var(--win);border:1px solid var(--border);border-radius:2px;
   padding:12px 14px;
@@ -879,7 +832,6 @@ body::after{
 .combat-log-entry.loss{ color:var(--red); }
 .combat-log-entry.empty{ color:var(--text-dim);text-align:center;padding:12px 0; }
 
-/* ── PANEL CONTENT CARDS (legacy) ── */
 .combat-menu-card{
   background:var(--win);border:2px solid var(--border-gold);
   border-radius:2px;padding:18px 20px;margin-bottom:12px;
@@ -917,7 +869,6 @@ body::after{
 .house-tag.owned{color:var(--gold);border-color:var(--gold)}
 .house-tag.locked{color:var(--text-dim);border-color:var(--border)}
 
-/* craft panel */
 .craft-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
 .craft-card{background:var(--win);border:2px solid var(--border);border-radius:2px;padding:16px 14px;text-align:center;cursor:pointer;transition:all .14s;}
 .craft-card:hover{border-color:var(--border-gold-hi);background:var(--bg4);box-shadow:0 0 12px var(--gold-glow)}
@@ -945,7 +896,6 @@ body::after{
 .quest-reward{font-family:'DotGothic16',monospace;font-size:.68rem;color:var(--sky);letter-spacing:.5px}
 .quest-prog{font-family:'DotGothic16',monospace;font-size:.68rem;color:var(--text-dim);margin-top:5px}
 
-/* mini-map + misc legacy */
 .mini-map{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-bottom:10px}
 .map-cell{aspect-ratio:1;background:rgba(10,14,26,.8);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.6rem;transition:all .3s;border-radius:1px}
 .map-cell.visited{background:rgba(40,64,100,.5);border-color:var(--border-hi)}
@@ -957,17 +907,10 @@ body::after{
 .stext.system{font-family:'DotGothic16',monospace;color:var(--text-dim);font-size:.76rem;letter-spacing:1px}
 .quest-item{padding:4px 8px;margin-bottom:3px;background:var(--bg3);border-left:2px solid var(--border-gold);border-radius:0 2px 2px 0;font-family:'DotGothic16',monospace;font-size:.7rem;color:var(--silver);line-height:1.6;letter-spacing:.5px}
 
-/* ══════════════════════════════════════════
-   MOBILE  (≤700px)
-   Left: icon-only sidebar
-   Right: tap to reveal player panel
-   Bottom: collapsible chat
-══════════════════════════════════════════ */
 @media(max-width:700px){
   #s-game{ height:100dvh; }
   .game-body{ overflow:hidden; }
 
-  /* left nav: icon-only always collapsed on mobile */
   .menu-nav{
     width:50px !important;
     border-right:2px solid var(--border-gold);
@@ -981,11 +924,10 @@ body::after{
     width:50px;height:50px;
     justify-content:center;
     border-left:3px solid transparent;
-    font-size:0;/* hide text */
+    font-size:0;
   }
   .menu-btn .micon{ font-size:1.35rem;min-width:auto; }
   .menu-btn .mlabel{ display:none; }
-  /* mobile tooltip */
   .menu-btn:hover::after,.menu-btn:focus::after{
     content:attr(data-tip);
     position:fixed;left:58px;
@@ -997,7 +939,6 @@ body::after{
   }
   .menu-btn.active{ border-left-color:var(--gold);background:var(--bg4); }
 
-  /* right player panel: hidden, slides in from right */
   .player-panel{
     position:fixed;top:0;right:0;bottom:0;
     width:220px !important;
@@ -1013,13 +954,11 @@ body::after{
     border-radius:4px 0 0 4px;
     background:var(--win);
   }
-  /* overlay backdrop */
   .player-backdrop{
     display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;
   }
   .player-backdrop.show{ display:block; }
 
-  /* chat bar */
   .chat-bar{
     height:36px;
     position:relative;z-index:100;
@@ -1027,13 +966,11 @@ body::after{
   .chat-bar.expanded{ height:260px; }
   .chat-bar-body{ height:calc(260px - 36px); }
 
-  /* content */
   .content-hdr{ padding:8px 14px; }
   .content-scroll{ padding:12px 14px; }
   .gather-grid{ grid-template-columns:repeat(2,1fr); }
   .house-grid,.craft-grid{ grid-template-columns:1fr 1fr; }
 
-  /* floating player button — always visible on mobile */
   .mob-player-fab{
     display:flex;
     position:fixed;
@@ -1051,12 +988,10 @@ body::after{
     transition:transform .15s,box-shadow .15s;
   }
   .mob-player-fab:active{ transform:scale(.92); }
-  /* hide FAB when player panel is open */
   .player-panel.mob-open ~ * .mob-player-fab,
   #player-panel.mob-open + .mob-player-fab{ display:none; }
 }
 
-/* ═══════════ INVENTORY / BAG ═══════════ */
 #s-bag{background:var(--bg);justify-content:flex-start;padding-top:24px}
 .bag-wrap{width:100%;max-width:700px}
 .bag-tabs{display:flex;gap:6px;margin-bottom:16px}
@@ -1105,7 +1040,6 @@ body::after{
 .equip-card-name{font-family:'DotGothic16',monospace;font-size:.78rem;display:block;margin-bottom:3px}
 .equip-card-stats{font-family:'DotGothic16',monospace;font-size:.7rem;color:var(--text-dim)}
 
-/* Item detail modal */
 .item-modal-bg{
   display:none;position:fixed;inset:0;
   background:rgba(0,0,0,.85);
@@ -1145,9 +1079,6 @@ body::after{
 }
 .sidebar .btn-bag:hover{border-color:var(--border-gold);color:var(--gold)}
 
-/* ═══════════════════════════════════════════
-   COMBAT SCREEN  — simplified
-═══════════════════════════════════════════ */
 #s-combat{
   background:
     radial-gradient(ellipse 60% 40% at 50% 30%,rgba(30,10,10,.9) 0%,transparent 65%),
@@ -1157,7 +1088,6 @@ body::after{
 }
 .combat-wrap{width:100%;max-width:560px;padding-bottom:16px}
 
-/* ── header strip ── */
 .cb-hdr{
   display:flex;align-items:center;justify-content:space-between;
   margin-bottom:10px;padding:6px 10px;
@@ -1166,7 +1096,6 @@ body::after{
 .cb-title{font-family:'DotGothic16',monospace;font-size:.78rem;color:var(--gold);letter-spacing:3px}
 .cb-sub{font-family:'DotGothic16',monospace;font-size:.68rem;color:var(--text-dim);letter-spacing:1px}
 
-/* ── battlefield: side-by-side compact ── */
 .cb-field{
   display:grid;grid-template-columns:1fr 36px 1fr;
   gap:6px;align-items:center;margin-bottom:10px;
@@ -1195,7 +1124,6 @@ body::after{
   text-shadow:0 0 12px rgba(240,56,48,.6);animation:vsPulse .9s ease-in-out infinite;}
 @keyframes vsPulse{0%,100%{opacity:1}50%{opacity:.5}}
 
-/* ── damage floater ── */
 .dmg-float{
   position:fixed;font-family:'DotGothic16',monospace;font-size:1.1rem;
   font-weight:bold;pointer-events:none;z-index:600;
@@ -1207,7 +1135,6 @@ body::after{
 .dmg-float.miss{color:var(--text-dim);font-size:.85rem}
 @keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1.2)}100%{opacity:0;transform:translateY(-50px) scale(.8)}}
 
-/* ── combat log ── */
 .cb-log{
   background:var(--win);border:1px solid var(--border);
   border-radius:2px;height:90px;overflow-y:auto;
@@ -1221,7 +1148,6 @@ body::after{
 .clog-enemy{border-color:var(--red);color:#f08080}
 .clog-system{border-color:var(--border-hi);color:var(--text-dim);font-style:italic}
 
-/* ── skill bar ── */
 .cb-skills{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
 @media(max-width:400px){.cb-skills{grid-template-columns:repeat(2,1fr)}}
 .sk-btn{
@@ -1238,7 +1164,6 @@ body::after{
 .sk-btn:disabled{opacity:.3;cursor:not-allowed}
 .sk-btn.my-turn{border-color:var(--border-gold);box-shadow:0 0 8px var(--gold-glow)}
 
-/* ── auto-battle bar ── */
 .cb-auto-bar{
   display:flex;align-items:center;gap:8px;
   background:var(--win);border:2px solid var(--border);border-radius:2px;
@@ -1267,7 +1192,6 @@ body::after{
 }
 .cb-round-display span{color:var(--gold)}
 
-/* ── bottom action row ── */
 .cb-actions{display:flex;gap:8px}
 .cb-flee-btn{
   flex:1;background:var(--bg3);border:2px solid #803020;color:var(--red);
@@ -1282,7 +1206,6 @@ body::after{
 }
 .cb-back-btn:hover{border-color:var(--border-gold);color:var(--gold)}
 
-/* party HP strip (multi) */
 .party-hps{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .party-hp-card{
   background:var(--win);border:1px solid var(--border);
@@ -1301,17 +1224,12 @@ body::after{
 .turn-indicator.wait{color:var(--text-dim)}
 .turn-timer{height:3px;background:linear-gradient(90deg,var(--gold-dim),var(--gold));border-radius:2px;margin-bottom:8px}
 
-/* ── combat screen legacy aliases (keep these so old IDs still work) ── */
 .combat-wrap .combat-skills{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.flee-btn{display:none} /* replaced by cb-flee-btn */
+.flee-btn{display:none} 
 
-/* ═══════════════════════════════════════════
-   MULTI PANEL — inline room system
-═══════════════════════════════════════════ */
 .multi-view{ display:block; }
 .multi-view.hide{ display:none; }
 
-/* room-setup form */
 .room-setup{
   background:var(--win);border:2px solid var(--border-gold);
   border-radius:2px;padding:16px;margin-bottom:14px;
@@ -1342,7 +1260,6 @@ body::after{
 .room-toggle-btn.sel{
   background:rgba(240,192,64,.1);border-color:var(--border-gold);color:var(--gold);
 }
-/* job chips */
 .job-chips{display:flex;flex-wrap:wrap;gap:6px}
 .job-chip{
   padding:5px 10px;background:var(--bg3);
@@ -1351,7 +1268,6 @@ body::after{
   transition:all .12s;letter-spacing:.5px;
 }
 .job-chip.sel{background:rgba(240,192,64,.1);border-color:var(--border-gold);color:var(--gold)}
-/* room cards in list */
 .room-card{
   background:var(--win);border:2px solid var(--border);border-radius:2px;
   padding:12px 14px;margin-bottom:8px;
@@ -1367,7 +1283,6 @@ body::after{
   padding:2px 6px;border:1px solid var(--border);border-radius:1px;color:var(--text-dim);
 }
 .room-tag.req{border-color:var(--border-gold);color:var(--gold-dim)}
-/* room view (after join) */
 .room-view-hdr{
   display:flex;align-items:center;justify-content:space-between;
   margin-bottom:10px;
@@ -1385,7 +1300,6 @@ body::after{
 .phc-name{font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--gold-dim);margin-bottom:4px;letter-spacing:1px}
 .phc-name.active-turn{color:var(--gold)}
 
-/* ═══════════ SKILL TREE ═══════════ */
 #s-skills{background:var(--bg);justify-content:flex-start;padding-top:24px}
 .skill-tree{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:680px;width:100%;margin:16px auto}
 @media(max-width:500px){.skill-tree{grid-template-columns:repeat(2,1fr)}}
@@ -1413,34 +1327,13 @@ body::after{
 }
 .sp-display{font-family:'DotGothic16',monospace;color:var(--sky);font-size:1rem;letter-spacing:2px}
 
-/* ═══════════ DUNGEON LOBBY ═══════════ */
 #s-lobby{background:var(--bg);justify-content:flex-start;padding-top:24px}
 .lobby-wrap{width:100%;max-width:640px}
-.room-card{
-  background:var(--win);border:2px solid var(--border);
-  border-radius:2px;padding:14px;margin-bottom:8px;
-  display:flex;justify-content:space-between;align-items:center;
-  transition:all .12s;
-}
-.room-card:hover{border-color:var(--border-gold);box-shadow:0 0 8px var(--gold-glow)}
-.room-code{font-family:'DotGothic16',monospace;font-size:1.05rem;color:var(--gold);letter-spacing:4px}
-.room-info{font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--silver);letter-spacing:.5px}
-.member-row{
-  display:flex;align-items:center;gap:10px;padding:9px 12px;margin-bottom:5px;
-  background:var(--bg3);border:1px solid var(--border);
-  border-radius:2px;
-}
-.member-icon{font-size:1.5rem}
-.member-name{font-family:'DotGothic16',monospace;font-size:.85rem;color:var(--gold);letter-spacing:1px}
-.member-job{font-family:'DotGothic16',monospace;font-size:.72rem;color:var(--silver)}
-.member-ready{font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--green);margin-left:auto;letter-spacing:1px}
-.member-notready{font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--text-dim);margin-left:auto;letter-spacing:1px}
 
 .hide{display:none!important}
 .center{text-align:center}
 .mt12{margin-top:12px}
 
-/* ── Equip change modal ── */
 .modal-overlay{
   position:fixed;inset:0;background:rgba(0,0,0,.7);
   display:flex;align-items:center;justify-content:center;
@@ -1471,7 +1364,6 @@ body::after{
 .modal-item-stat{
   font-family:'DotGothic16',monospace;font-size:.68rem;color:var(--sky);letter-spacing:.5px;
 }
-/* equip-change button inside equip slot */
 .equip-change-btn{
   margin-left:auto;background:transparent;border:1px solid var(--border);
   color:var(--text-dim);font-size:.75rem;padding:2px 6px;cursor:pointer;
@@ -1479,9 +1371,6 @@ body::after{
 }
 .equip-change-btn:hover{ border-color:var(--border-gold);color:var(--gold); }
 
-/* ══════════════════════════════════════════════
-   INLINE COMBAT OVERLAY  (inside content-area)
-══════════════════════════════════════════════ */
 .combat-overlay{
   position:absolute;inset:0;
   background:linear-gradient(180deg,rgba(12,6,24,.97) 0%,rgba(8,4,18,.99) 100%);
@@ -1489,8 +1378,6 @@ body::after{
   flex-direction:column;overflow:hidden;
 }
 .combat-overlay.active{ display:flex; }
-
-/* top bar */
 .cov-topbar{
   display:flex;align-items:center;gap:10px;
   padding:8px 14px;background:var(--win);
@@ -1504,8 +1391,6 @@ body::after{
   margin-left:auto;font-family:'DotGothic16',monospace;
   font-size:.68rem;color:var(--text-dim);letter-spacing:1px;
 }
-
-/* battlefield */
 .cov-field{
   display:grid;grid-template-columns:1fr 28px 1fr;
   gap:8px;align-items:center;
@@ -1549,7 +1434,6 @@ body::after{
 }
 @keyframes vsPulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-/* auto control bar */
 .cov-auto-bar{
   display:flex;align-items:center;gap:8px;flex-wrap:wrap;
   padding:6px 14px;background:var(--win);
@@ -1582,7 +1466,6 @@ body::after{
 .cov-progress .done{color:var(--gold)}
 .cov-progress .total{color:var(--text-dim)}
 
-/* log */
 .cov-log{
   flex:1;overflow-y:auto;
   padding:8px 14px;min-height:0;
@@ -1600,7 +1483,6 @@ body::after{
 .cov-entry.win{border-color:var(--green);color:var(--green)}
 .cov-entry.lose{border-color:var(--red);color:var(--red)}
 
-/* bottom action */
 .cov-bottom{
   display:flex;gap:8px;padding:8px 14px;
   background:var(--win);border-top:2px solid var(--border-gold);flex-shrink:0;
@@ -1615,21 +1497,6 @@ body::after{
 .cov-stop-btn{background:var(--bg3);border-color:var(--border);color:var(--silver)}
 .cov-stop-btn:hover{border-color:var(--border-gold);color:var(--gold)}
 
-/* dmg floater */
-.dmg-float{
-  position:fixed;font-family:'DotGothic16',monospace;
-  font-size:1.15rem;font-weight:bold;
-  pointer-events:none;z-index:600;white-space:nowrap;
-  animation:floatUp .85s ease forwards;
-}
-.dmg-float.pl{color:#ffe844;text-shadow:0 0 8px #ffe844}
-.dmg-float.en{color:#ff7070;text-shadow:0 0 8px #ff4040}
-.dmg-float.hl{color:#44ff99;text-shadow:0 0 8px #44ff99}
-.dmg-float.ms{color:var(--text-dim);font-size:.82rem}
-.dmg-float.cr{color:#ff8800;font-size:1.3rem;text-shadow:0 0 12px #ff8800}
-@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1.1)}100%{opacity:0;transform:translateY(-48px) scale(.8)}}
-
-/* multi right-tabs */
 .multi-tabs-row{
   display:flex;gap:0;
   border-bottom:2px solid var(--border-gold);margin-bottom:14px;
@@ -1725,7 +1592,7 @@ body::after{
     <label class="inp-label" style="margin-bottom:10px;display:block">◆ 選擇職業</label>
     <div class="job-grid">
       <div class="job-card" data-job="mage" onclick="selJob(this)">
-        <span class="job-icon"></span>
+        <span class="job-icon">🧙</span>
         <span class="job-name">法師</span>
         <span class="job-desc">強力咒文焚盡敵人的魔法使者</span>
         <span class="job-stat">INT +5  MP +40</span>
@@ -1737,7 +1604,7 @@ body::after{
         <span class="job-stat">STR +5  HP +40</span>
       </div>
       <div class="job-card" data-job="rogue" onclick="selJob(this)">
-        <span class="job-icon">️</span>
+        <span class="job-icon">🗡️</span>
         <span class="job-name">盜賊</span>
         <span class="job-desc">以迅捷身法突襲要害的暗影刺客</span>
         <span class="job-stat">AGI +5  CRIT +15%</span>
@@ -1783,28 +1650,28 @@ body::after{
           <span class="micon">⛏️</span><span class="mlabel">採集活動</span>
         </button>
         <button class="menu-btn" id="mbtn-house" data-tip="房屋" onclick="setMenu('house')">
-          <span class="micon"></span><span class="mlabel">房屋管理</span>
+          <span class="micon">🏡</span><span class="mlabel">房屋管理</span>
         </button>
 
         <div class="menu-divider"></div>
         <div class="menu-section-lbl">── 製作 ──</div>
-        <button class="menu-btn" id="mbtn-craft" data-tip="製作裝備" onclick="setMenu('craft')">
-          <span class="micon">⚒</span><span class="mlabel">製作裝備</span>
+        <button class="menu-btn" id="mbtn-craft" data-tip="製作" onclick="setMenu('craft')">
+          <span class="micon">⚒</span><span class="mlabel">製作</span>
         </button>
         <button class="menu-btn" id="mbtn-tools" data-tip="製作工具" onclick="setMenu('tools')">
-          <span class="micon"></span><span class="mlabel">製作工具</span>
+          <span class="micon">🪓</span><span class="mlabel">製作工具</span>
         </button>
 
         <div class="menu-divider"></div>
         <div class="menu-section-lbl">── 進度 ──</div>
         <button class="menu-btn" id="mbtn-quests" data-tip="任務" onclick="setMenu('quests')">
-          <span class="micon"></span><span class="mlabel">任務列表</span>
+          <span class="micon">📜</span><span class="mlabel">任務列表</span>
         </button>
 
         <div class="menu-divider"></div>
         <div class="menu-section-lbl">── 社交 ──</div>
         <button class="menu-btn" id="mbtn-friends" data-tip="朋友" onclick="setMenu('friends')">
-          <span class="micon"></span><span class="mlabel">朋友列表</span>
+          <span class="micon">🤝</span><span class="mlabel">朋友列表</span>
         </button>
 
         <div class="menu-bottom">
@@ -1813,10 +1680,10 @@ body::after{
             <span class="micon">✨</span><span class="mlabel">學習技能</span>
           </button>
           <button class="menu-btn" data-tip="道具袋" onclick="goScreen('bag')">
-            <span class="micon"></span><span class="mlabel">道具袋</span>
+            <span class="micon">🎒</span><span class="mlabel">道具袋</span>
           </button>
           <button class="menu-btn" data-tip="換角色" onclick="goScreen('chars')">
-            <span class="micon"></span><span class="mlabel">更換角色</span>
+            <span class="micon">🔄</span><span class="mlabel">更換角色</span>
           </button>
         </div>
       </div>
@@ -1882,10 +1749,10 @@ body::after{
 
           <div class="combat-mode-tabs">
             <button class="combat-mode-tab active" id="cmtab-solo" onclick="setCombatMode('solo')">
-              ️ 單人模式
+              👤 單人模式
             </button>
             <button class="combat-mode-tab" id="cmtab-multi" onclick="setCombatMode('multi')">
-               多人模式
+              👥 多人模式
             </button>
           </div>
 
@@ -1898,7 +1765,7 @@ body::after{
             <div id="monster-section-wrap" style="display:none">
               <div class="monster-section">
                 <div class="monster-section-hdr">
-                  <span id="monster-section-icon">️</span>
+                  <span id="monster-section-icon">👾</span>
                   <span class="monster-section-title" id="monster-section-name">怪物列表</span>
                   <span class="monster-section-sub" id="monster-section-sub">選擇目標出擊</span>
                 </div>
@@ -1918,9 +1785,9 @@ body::after{
           <div class="combat-mode-pane" id="cm-multi">
 
             <div class="multi-tabs-row">
-              <button class="multi-tab active" id="mtab-find"   onclick="setMultiTab('find')"> 尋找房間</button>
+              <button class="multi-tab active" id="mtab-find"   onclick="setMultiTab('find')">🔍 尋找房間</button>
               <button class="multi-tab"        id="mtab-create" onclick="setMultiTab('create')">➕ 創建房間</button>
-              <button class="multi-tab"        id="mtab-room"   onclick="setMultiTab('room')" style="display:none"> 房間內</button>
+              <button class="multi-tab"        id="mtab-room"   onclick="setMultiTab('room')" style="display:none">🚪 房間內</button>
             </div>
 
             <div class="multi-tab-pane active" id="mtab-pane-find">
@@ -1937,7 +1804,7 @@ body::after{
 
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
                 <div class="sec" style="margin:0">公開房間</div>
-                <button class="btn btn-sm btn-ghost" onclick="refreshMultiRooms()" style="font-size:.68rem;padding:4px 10px"> 重整</button>
+                <button class="btn btn-sm btn-ghost" onclick="refreshMultiRooms()" style="font-size:.68rem;padding:4px 10px">🔄 重整</button>
               </div>
               <div id="multi-room-list">
                 <div style="font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--text-dim);text-align:center;padding:14px 0">載入中…</div>
@@ -1951,7 +1818,7 @@ body::after{
               <div id="create-monster-wrap" style="display:none">
                 <div class="monster-section">
                   <div class="monster-section-hdr">
-                    <span id="create-monster-icon">️</span>
+                    <span id="create-monster-icon">👾</span>
                     <span class="monster-section-title" id="create-monster-name">怪物列表</span>
                     <span class="monster-section-sub" id="create-monster-sub">選擇目標</span>
                   </div>
@@ -1970,8 +1837,8 @@ body::after{
                 <div class="room-field">
                   <span class="room-field-label">公開 / 私人</span>
                   <div class="room-toggle-row">
-                    <button class="room-toggle-btn sel" id="mc-pub-btn" onclick="setMCPrivacy(false)"> 公開</button>
-                    <button class="room-toggle-btn" id="mc-priv-btn" onclick="setMCPrivacy(true)"> 私人</button>
+                    <button class="room-toggle-btn sel" id="mc-pub-btn" onclick="setMCPrivacy(false)">🌐 公開</button>
+                    <button class="room-toggle-btn" id="mc-priv-btn" onclick="setMCPrivacy(true)">🔒 私人</button>
                   </div>
                   <input type="hidden" id="mc-private" value="0">
                 </div>
@@ -1980,8 +1847,8 @@ body::after{
                   <span class="room-field-label">要求職業（可多選，不選 = 任意）</span>
                   <div class="job-chips">
                     <button class="job-chip" data-job="warrior"  onclick="toggleJobChip(this)">⚔️ 勇者</button>
-                    <button class="job-chip" data-job="mage"     onclick="toggleJobChip(this)">  法師</button>
-                    <button class="job-chip" data-job="rogue"    onclick="toggleJobChip(this)">️ 盜賊</button>
+                    <button class="job-chip" data-job="mage"     onclick="toggleJobChip(this)">🧙 法師</button>
+                    <button class="job-chip" data-job="rogue"    onclick="toggleJobChip(this)">🗡️ 盜賊</button>
                     <button class="job-chip" data-job="priest"   onclick="toggleJobChip(this)">✨ 聖職者</button>
                   </div>
                 </div>
@@ -2023,19 +1890,19 @@ body::after{
         <div class="content-panel" id="panel-gather">
           <div class="gather-grid">
             <div class="gather-card" id="gcard-farm" onclick="startGather('farm')">
-              <span class="gather-icon"></span>
+              <span class="gather-icon">🌾</span>
               <div class="gather-name">耕田</div>
               <div class="gather-desc">種植農作物，定時收成獲取食材與藥草。</div>
               <div class="gather-bonus" id="gbonus-farm">加成：─</div>
             </div>
             <div class="gather-card" id="gcard-fish" onclick="startGather('fish')">
-              <span class="gather-icon"></span>
+              <span class="gather-icon">🎣</span>
               <div class="gather-name">釣魚</div>
               <div class="gather-desc">垂釣江河湖海，獲取魚類與稀有素材。</div>
               <div class="gather-bonus" id="gbonus-fish">加成：─</div>
             </div>
             <div class="gather-card" id="gcard-wood" onclick="startGather('wood')">
-              <span class="gather-icon"></span>
+              <span class="gather-icon">🪓</span>
               <div class="gather-name">伐木</div>
               <div class="gather-desc">砍伐森林木材，可用於建造房屋或製作道具。</div>
               <div class="gather-bonus" id="gbonus-wood">加成：─</div>
@@ -2062,28 +1929,28 @@ body::after{
           </div>
           <div class="house-grid">
             <div class="house-card" id="hcard-pond" onclick="toggleHouse('pond')">
-              <span class="house-icon"></span>
+              <span class="house-icon">🐟</span>
               <div class="house-name">魚　場</div>
               <div class="house-bonus">釣魚效率 +50%<br>稀有魚獲機率 +25%<br>釣魚 EXP +30%</div>
               <div class="house-cost">建造：500 金幣 · 木材 ×20</div>
               <span class="house-tag locked" id="htag-pond">── 未建造 ──</span>
             </div>
             <div class="house-card" id="hcard-farm" onclick="toggleHouse('farm')">
-              <span class="house-icon"></span>
+              <span class="house-icon">🏡</span>
               <div class="house-name">農　場</div>
               <div class="house-bonus">耕田效率 +50%<br>收成量 +40%<br>藥草掉落率 +20%</div>
               <div class="house-cost">建造：400 金幣 · 木材 ×15</div>
               <span class="house-tag locked" id="htag-farm">── 未建造 ──</span>
             </div>
             <div class="house-card" id="hcard-forge" onclick="toggleHouse('forge')">
-              <span class="house-icon"></span>
+              <span class="house-icon">⚒️</span>
               <div class="house-name">鍛造所</div>
               <div class="house-bonus">採礦效率 +40%<br>礦石品質 +30%<br>武器製作費用 -20%</div>
               <div class="house-cost">建造：600 金幣 · 礦石 ×30</div>
               <span class="house-tag locked" id="htag-forge">── 未建造 ──</span>
             </div>
             <div class="house-card" id="hcard-sawmill" onclick="toggleHouse('sawmill')">
-              <span class="house-icon"></span>
+              <span class="house-icon">🪵</span>
               <div class="house-name">木材廠</div>
               <div class="house-bonus">伐木效率 +60%<br>木材產量 +50%<br>建造費用 -15%</div>
               <div class="house-cost">建造：350 金幣 · 木材 ×10</div>
@@ -2094,53 +1961,44 @@ body::after{
 
         <div class="content-panel" id="panel-craft">
           <div style="font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--silver);letter-spacing:.5px;line-height:2;margin-bottom:14px">
-            ◆ 使用採集素材打造武器裝備。鍛造所建成後可降低製作費用並提升品質。
+            ◆ 使用採集素材進行各種製作與加工。鍛造所建成後可降低製作費用並提升品質。
           </div>
-          <div class="craft-grid">
-            <div class="craft-card" onclick="openCraft('sword')">
-              <span class="craft-icon">⚔️</span>
-              <div class="craft-name">鐵　劍</div>
-              <div class="craft-type">近戰武器</div>
-              <div class="craft-req">鐵礦 ×5 · 木材 ×2<br>ATK +12</div>
-            </div>
-            <div class="craft-card" onclick="openCraft('bow')">
-              <span class="craft-icon"></span>
-              <div class="craft-name">獵人弓</div>
-              <div class="craft-type">遠程武器</div>
-              <div class="craft-req">木材 ×8 · 獸皮 ×3<br>ATK +10 · 射程遠</div>
-            </div>
-            <div class="craft-card" onclick="openCraft('staff')">
-              <span class="craft-icon"></span>
-              <div class="craft-name">魔法法杖</div>
-              <div class="craft-type">法系武器</div>
-              <div class="craft-req">魔晶礦石 ×4 · 木材 ×3<br>INT +15 · MP +20</div>
-            </div>
-            <div class="craft-card" onclick="openCraft('dagger')">
-              <span class="craft-icon">️</span>
-              <div class="craft-name">暗影短刃</div>
-              <div class="craft-type">盜賊武器</div>
-              <div class="craft-req">鐵礦 ×3 · 獸皮 ×4<br>AGI +8 · 會心 +5%</div>
-            </div>
-            <div class="craft-card" onclick="openCraft('shield')">
-              <span class="craft-icon">️</span>
-              <div class="craft-name">鋼鐵盾牌</div>
-              <div class="craft-type">防禦裝備</div>
-              <div class="craft-req">鐵礦 ×8 · 木材 ×2<br>DEF +18</div>
-            </div>
-            <div class="craft-card" onclick="openCraft('armor')">
-              <span class="craft-icon"></span>
-              <div class="craft-name">皮製護甲</div>
-              <div class="craft-type">防禦裝備</div>
-              <div class="craft-req">獸皮 ×10 · 草藥 ×3<br>DEF +10 · HP +30</div>
-            </div>
+          
+          <div class="bag-tabs" style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+            <button class="bag-tab active" id="ctab-cook" onclick="switchCraftTab('cook')" style="flex:1 1 18%;padding:8px;font-size:0.75rem;">煮食</button>
+            <button class="bag-tab" id="ctab-weapon" onclick="switchCraftTab('weapon')" style="flex:1 1 18%;padding:8px;font-size:0.75rem;">武器</button>
+            <button class="bag-tab" id="ctab-armor" onclick="switchCraftTab('armor')" style="flex:1 1 18%;padding:8px;font-size:0.75rem;">防具</button>
+            <button class="bag-tab" id="ctab-disassemble" onclick="switchCraftTab('disassemble')" style="flex:1 1 18%;padding:8px;font-size:0.75rem;">分解</button>
+            <button class="bag-tab" id="ctab-enhance" onclick="switchCraftTab('enhance')" style="flex:1 1 18%;padding:8px;font-size:0.75rem;">強化</button>
           </div>
+
+          <div id="craft-view-cook" class="craft-view-pane">
+            <div class="craft-grid" id="craft-grid-cook"></div>
+          </div>
+          <div id="craft-view-weapon" class="craft-view-pane hide">
+            <div class="craft-grid" id="craft-grid-weapon"></div>
+          </div>
+          <div id="craft-view-armor" class="craft-view-pane hide">
+            <div class="craft-grid" id="craft-grid-armor"></div>
+          </div>
+          <div id="craft-view-disassemble" class="craft-view-pane hide">
+            <div style="text-align:center;padding:10px;color:var(--text-dim);font-family:'DotGothic16',monospace;font-size:0.8rem">
+                ◆ 請選擇背包中的裝備進行分解，可獲得隨機素材。
+            </div>
+            <div class="inv-grid mt12" id="craft-grid-disassemble"></div>
+          </div>
+          <div id="craft-view-enhance" class="craft-view-pane hide">
+            <div style="text-align:center;padding:10px;color:var(--text-dim);font-family:'DotGothic16',monospace;font-size:0.8rem">
+                ◆ 請選擇裝備進行強化，需要消耗對應礦石與金幣。
+            </div>
+            <div class="inv-grid mt12" id="craft-grid-enhance"></div>
+          </div>
+
           <div class="craft-result-card" id="craft-result">
             <div style="font-family:'DotGothic16',monospace;font-size:.8rem;color:var(--gold);letter-spacing:2px;margin-bottom:10px" id="craft-result-title">製作確認</div>
             <div style="font-family:'DotGothic16',monospace;font-size:.72rem;color:var(--silver);line-height:1.8;margin-bottom:12px" id="craft-result-body"></div>
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-full" onclick="doCraft()">確認製作</button>
-              <button class="btn btn-full btn-ghost" onclick="closeCraft()">取消</button>
-            </div>
+            <div class="flex-btns" style="display:flex;gap:8px">
+              </div>
           </div>
         </div>
 
@@ -2156,31 +2014,31 @@ body::after{
               <div class="craft-req">鐵礦 ×6 · 木材 ×3<br>採礦效率 +30%</div>
             </div>
             <div class="craft-card" onclick="openCraft('axe')">
-              <span class="craft-icon"></span>
+              <span class="craft-icon">🪓</span>
               <div class="craft-name">強化斧頭</div>
               <div class="craft-type">伐木工具</div>
               <div class="craft-req">鐵礦 ×4 · 木材 ×5<br>伐木效率 +40%</div>
             </div>
             <div class="craft-card" onclick="openCraft('rod')">
-              <span class="craft-icon"></span>
+              <span class="craft-icon">🎣</span>
               <div class="craft-name">精良釣魚竿</div>
               <div class="craft-type">釣魚工具</div>
               <div class="craft-req">木材 ×6 · 鯉魚 ×3<br>釣魚效率 +35%</div>
             </div>
             <div class="craft-card" onclick="openCraft('hoe')">
-              <span class="craft-icon"></span>
+              <span class="craft-icon">🌾</span>
               <div class="craft-name">金屬鋤頭</div>
               <div class="craft-type">耕田工具</div>
               <div class="craft-req">鐵礦 ×3 · 木材 ×4<br>耕田效率 +25%</div>
             </div>
             <div class="craft-card" onclick="openCraft('waterskin')">
-              <span class="craft-icon"></span>
+              <span class="craft-icon">🏺</span>
               <div class="craft-name">藥水容器</div>
               <div class="craft-type">道具</div>
               <div class="craft-req">獸皮 ×5 · 草藥 ×2<br>可攜帶 HP 藥水 ×3</div>
             </div>
             <div class="craft-card" onclick="openCraft('torch')">
-              <span class="craft-icon"></span>
+              <span class="craft-icon">🔥</span>
               <div class="craft-name">礦山火把</div>
               <div class="craft-type">道具</div>
               <div class="craft-req">木材 ×3 · 草藥 ×1<br>深層礦山解鎖</div>
@@ -2328,9 +2186,12 @@ body::after{
     
     <div class="title-sm center" style="margin-bottom:6px;letter-spacing:6px">道具袋</div>
     <div class="gold-display" id="bag-gold">◆ 金幣：0 G</div>
-    <div class="bag-tabs">
-      <button class="bag-tab active" id="btab-equip" onclick="switchBagTab('equip')">已裝備</button>
-      <button class="bag-tab" id="btab-inv" onclick="switchBagTab('inv')">持有道具</button>
+    
+    <div class="bag-tabs" style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="bag-tab active" id="btab-equip" onclick="switchBagTab('equip')" style="flex:1 1 20%">目前裝備</button>
+      <button class="bag-tab" id="btab-inv-equip" onclick="switchBagTab('inv-equip')" style="flex:1 1 20%">裝備背包</button>
+      <button class="bag-tab" id="btab-inv-mat" onclick="switchBagTab('inv-mat')" style="flex:1 1 20%">素材</button>
+      <button class="bag-tab" id="btab-inv-item" onclick="switchBagTab('inv-item')" style="flex:1 1 20%">物品</button>
     </div>
 
     <div id="bag-equip-view">
@@ -2361,62 +2222,7 @@ body::after{
 </div>
 
 <div id="s-combat" class="screen" style="display:none!important">
-  <div class="combat-wrap">
-
-    <div class="cb-hdr">
-      <span class="cb-title" id="c-sub">⚔️ 戰鬥中</span>
-      <span class="cb-sub" id="c-round-badge">Round <span id="c-round-num">1</span></span>
-    </div>
-
-    <div class="party-hps" id="c-party-hps"></div>
-
-    <div class="cb-field">
-      <div class="cb-fighter" id="c-player-card">
-        <span class="cb-f-icon" id="c-p-icon">⚔️</span>
-        <div class="cb-f-name" id="c-p-name">勇者</div>
-        <div class="cb-f-hp-track"><div class="cb-f-hp-fill high" id="c-p-hp-bar" style="width:100%"></div></div>
-        <div class="cb-f-hp-txt" id="c-p-hp">-/-</div>
-        <div class="cb-f-mp-track"><div class="cb-f-mp-fill" id="c-p-mp-bar" style="width:100%"></div></div>
-        <div class="cb-f-hp-txt" id="c-p-mp" style="color:var(--sky)">-/-</div>
-      </div>
-      <div class="cb-vs">VS</div>
-      <div class="cb-fighter" id="c-enemy-card">
-        <span class="cb-f-icon" id="c-e-icon"></span>
-        <div class="cb-f-name" id="c-e-name">???</div>
-        <div class="cb-f-hp-track"><div class="cb-f-hp-fill" id="c-e-hp-bar" style="width:100%"></div></div>
-        <div class="cb-f-hp-txt" id="c-e-hp">-/-</div>
-        <div class="cb-f-hp-txt" id="c-e-type" style="color:var(--text-dim);margin-top:2px">-</div>
-      </div>
-    </div>
-
-    <div class="turn-indicator hide" id="c-turn-ind"></div>
-    <div class="turn-timer hide" id="c-turn-timer"></div>
-
-    <div class="cb-log" id="c-log"></div>
-
-    <div class="cb-skills" id="c-skills"></div>
-
-    <div class="cb-auto-bar">
-      <label class="cb-auto-toggle" id="auto-toggle-lbl">
-        <input type="checkbox" id="cb-auto-chk" onchange="toggleAutoBattle(this.checked)">
-        自動戰鬥
-      </label>
-      <div class="cb-auto-sep"></div>
-      <span class="cb-auto-count-lbl">次數</span>
-      <input class="cb-auto-count" id="cb-auto-count" type="number" min="1" max="999" value="10" placeholder="∞">
-      <span class="cb-auto-count-lbl" style="color:var(--text-dim)">次</span>
-      <div class="cb-round-display" id="cb-auto-progress" style="display:none">
-        已打 <span id="cb-auto-done">0</span> / <span id="cb-auto-total">10</span>
-      </div>
-    </div>
-
-    <div class="cb-actions">
-      <button class="cb-flee-btn" onclick="doFlee()">逃跑</button>
-      <button class="cb-back-btn" onclick="exitCombat()">返回城鎮</button>
-    </div>
-
   </div>
-</div>
 
 <div id="s-skills" class="screen">
   <div style="width:100%;max-width:700px;padding:0 10px">
@@ -2429,66 +2235,7 @@ body::after{
 </div>
 
 <div id="s-lobby" class="screen">
-  <div class="lobby-wrap">
-    
-    <div class="title-sm center" style="margin-bottom:6px;letter-spacing:4px">冒險者公會</div>
-    <div class="divider">尋找夥伴，一起踏上征途吧！</div>
-
-    <div id="lobby-room-view" class="hide">
-      <div class="panel" style="margin-bottom:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div>
-            <div style="font-family:'DotGothic16',monospace;font-size:.75rem;color:var(--text-dim);margin-bottom:4px;letter-spacing:2px" id="lob-title-lbl">隊伍名稱</div>
-            <div style="display:flex;align-items:center;gap:10px">
-              <span class="room-code" id="lob-code">----</span>
-              <span id="lob-privacy-badge" style="font-family:'DotGothic16',monospace;font-size:.7rem;padding:2px 8px;border:1px solid var(--border-gold);color:var(--silver)">公開</span>
-            </div>
-          </div>
-          <button class="btn btn-sm" id="lob-ready-btn" onclick="toggleReady()">準備完成</button>
-        </div>
-        <div id="lob-members"></div>
-        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-sm hide" id="lob-start-btn" onclick="startDungeon()">踏上征途！</button>
-          <button class="btn btn-sm btn-ghost" onclick="leaveRoom()">離開隊伍</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="lobby-main-view">
-      <div class="panel" style="margin-bottom:16px">
-        <div class="sec" style="margin-top:0">組建隊伍</div>
-        <div class="inp-group" style="margin-bottom:10px">
-          <label class="inp-label">隊伍名稱（選填）</label>
-          <input class="inp" id="room-title-inp" placeholder="例：一起討伐魔王！" maxlength="30">
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
-          <button class="btn btn-sm" id="priv-toggle-pub" onclick="setPrivacy(false)"
-            style="flex:1;border-color:var(--border-gold-hi)">公開隊伍</button>
-          <button class="btn btn-sm btn-ghost" id="priv-toggle-priv" onclick="setPrivacy(true)"
-            style="flex:1">私人隊伍</button>
-        </div>
-        <input type="hidden" id="room-is-private" value="0">
-        <button class="btn btn-full" onclick="doCreateRoom()">組建隊伍</button>
-      </div>
-
-      <div class="panel" style="margin-bottom:16px">
-        <div class="sec" style="margin-top:0">用密碼加入</div>
-        <div style="display:flex;gap:8px">
-          <input class="inp" id="join-code" placeholder="輸入8位密碼" maxlength="8"
-            style="font-family:'DotGothic16',monospace;letter-spacing:4px;text-transform:uppercase;flex:1"
-            onkeydown="if(event.key==='Enter')doJoinRoom()">
-          <button class="btn btn-sm" onclick="doJoinRoom()">加入</button>
-        </div>
-      </div>
-
-      <div class="sec">公開招募中的隊伍</div>
-      <div id="lob-room-list"></div>
-    </div>
-
-    <div class="mt12 center"><button class="btn btn-sm btn-ghost" onclick="goScreen('game')">返回</button></div>
   </div>
-</div>
-
 
 <script src="/js/game-data.js"></script>
 <script src="/js/game-core.js"></script>
