@@ -69,7 +69,7 @@ const MENU_HEADERS = {
   combat:  ['◆ 戰鬥副本',  '■ 選擇出擊方式'],
   gather:  ['◆ 採集活動',  '■ 選擇採集類型'],
   house:   ['◆ 房屋管理',  '■ 建造設施強化採集'],
-  craft:   ['◆ 製作裝備',  '■ 打造武器與防具'],
+  craft:   ['◆ 製作',      '■ 裝備鍛造與加工'], 
   tools:   ['◆ 製作工具',  '■ 強化採集工具'],
   quests:  ['◆ 任務列表',  '■ 完成任務獲取獎勵'],
   friends: ['◆ 朋友列表',  '■ 一起冒險吧'],
@@ -86,6 +86,9 @@ function setMenu(tab) {
 
   if (tab === 'combat' && typeof initCombatPanel === 'function') {
     initCombatPanel();
+  }
+  if (tab === 'craft' && typeof renderCraftGrids === 'function') {
+    renderCraftGrids();
   }
 
   const h = MENU_HEADERS[tab] || ['◆ 冒險', '■'];
@@ -187,23 +190,16 @@ function refreshSidebar() {
     }).join('');
   }
 
-  // ✅ 更新裝備清單，包含 9 個位置
   const equip = c.equipment||[];
   const slots = ['head', 'headgear', 'neck', 'weapon', 'armor', 'hand', 'foot', 'accessory_l', 'accessory_r'];
-  const slotNames = {
-    head: '頭部', headgear: '頭飾', neck: '頸部',
-    weapon: '武器', armor: '身體', hand: '手部',
-    foot: '腳部', accessory_l: '左飾', accessory_r: '右飾'
-  };
-
+  
   const equipHtml = slots.map(slot=>{
     const e = equip.find(x=>x.slot===slot);
     const bonusStr = e?.bonus ? Object.entries(e.bonus).filter(([,v])=>v).map(([k,v])=>`${k}+${v}`).join(' ') : '';
     return `<div class="equip-slot">
-      <span class="equip-slot-lbl" style="width:36px">${slotNames[slot]}</span>
+      <span class="equip-slot-lbl" style="width:40px">${SLOT_NAMES[slot] || slot}</span>
       <span class="rarity-${e?.rarity||'common'}">${e?.name||'─'}</span>
       <div style="flex:1"></div>
-      ${bonusStr ? `<span style="font-size:0.6rem;color:var(--green);margin-right:4px">${bonusStr}</span>` : ''}
       <button class="equip-change-btn" onclick="openEquipChange('${slot}')" title="更換">↺</button>
     </div>`;
   }).join('');
@@ -252,18 +248,13 @@ function refreshSidebar() {
 function openEquipChange(slot) {
   if(!state.char) return;
   const inv = (state.char.inventory||[]).filter(i=>i.slot===slot || i.type===slot);
-  const slotNames = {
-    head: '頭部', headgear: '頭飾', neck: '頸部',
-    weapon: '武器', armor: '身體', hand: '手部',
-    foot: '腳部', accessory_l: '左手飾物', accessory_r: '右手飾物'
-  };
   
   let html = `<div class="modal-overlay" id="equip-modal" onclick="if(event.target.id==='equip-modal')closeEquipModal()">
     <div class="modal-box">
-      <div class="modal-title">更換${slotNames[slot]||slot}</div>`;
+      <div class="modal-title">更換${SLOT_NAMES[slot]||slot}</div>`;
       
   if(inv.length === 0){
-    html += `<div class="modal-empty">背包中沒有可裝備的${slotNames[slot]||slot}</div>`;
+    html += `<div class="modal-empty">背包中沒有可裝備的${SLOT_NAMES[slot]||slot}</div>`;
   } else {
     html += inv.map(item => {
       const bonusStr = item.bonus ? Object.entries(item.bonus).filter(([,v])=>v).map(([k,v])=>`${k}+${v}`).join(' ') : '';
