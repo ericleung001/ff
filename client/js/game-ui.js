@@ -70,7 +70,7 @@ const MENU_HEADERS = {
   gather:  ['◆ 採集活動',  '■ 選擇採集類型'],
   house:   ['◆ 房屋管理',  '■ 建造設施強化採集'],
   craft:   ['◆ 製作',      '■ 裝備鍛造與加工'], 
-  tools:   ['◆ 製作工具',  '■ 強化採集工具'],
+  tools:   ['◆ 製作工具',  '■ 升級各項採集與製作工具'],
   quests:  ['◆ 任務列表',  '■ 完成任務獲取獎勵'],
   friends: ['◆ 朋友列表',  '■ 一起冒險吧'],
 };
@@ -89,6 +89,9 @@ function setMenu(tab) {
   }
   if (tab === 'craft' && typeof renderCraftGrids === 'function') {
     renderCraftGrids();
+  }
+  if (tab === 'tools' && typeof renderToolGrids === 'function') {
+    renderToolGrids();
   }
 
   const h = MENU_HEADERS[tab] || ['◆ 冒險', '■'];
@@ -139,8 +142,10 @@ function refreshSidebar() {
         const val = parseInt(v) || 0;
         if (k === 'maxHp') bonusHp += val;
         else if (k === 'maxMp') bonusMp += val;
-        else if (effStats[k] !== undefined) effStats[k] += val;
-        else effStats[k] = val;
+        else if (k !== 'level' && k !== 'base') {
+            if (effStats[k] !== undefined) effStats[k] += val;
+            else effStats[k] = val;
+        }
       });
     }
   });
@@ -195,11 +200,14 @@ function refreshSidebar() {
   
   const equipHtml = slots.map(slot=>{
     const e = equip.find(x=>x.slot===slot);
-    const bonusStr = e?.bonus ? Object.entries(e.bonus).filter(([,v])=>v).map(([k,v])=>`${k}+${v}`).join(' ') : '';
+    const lvStr = e?.bonus?.level > 1 ? `+${e.bonus.level} ` : '';
+    // ✅ 乾淨過濾系統變數 (level, base)
+    const bonusStr = e?.bonus ? Object.entries(e.bonus).filter(([k,v])=>v && k!=='level' && k!=='base').map(([k,v])=>`${k}+${v}`).join(' ') : '';
     return `<div class="equip-slot">
       <span class="equip-slot-lbl" style="width:40px">${SLOT_NAMES[slot] || slot}</span>
-      <span class="rarity-${e?.rarity||'common'}">${e?.name||'─'}</span>
+      <span class="rarity-${e?.rarity||'common'}">${lvStr}${e?.name||'─'}</span>
       <div style="flex:1"></div>
+      ${bonusStr ? `<span style="font-size:0.65rem;color:var(--green);margin-right:4px">${bonusStr}</span>` : ''}
       <button class="equip-change-btn" onclick="openEquipChange('${slot}')" title="更換">↺</button>
     </div>`;
   }).join('');
@@ -257,10 +265,11 @@ function openEquipChange(slot) {
     html += `<div class="modal-empty">背包中沒有可裝備的${SLOT_NAMES[slot]||slot}</div>`;
   } else {
     html += inv.map(item => {
-      const bonusStr = item.bonus ? Object.entries(item.bonus).filter(([,v])=>v).map(([k,v])=>`${k}+${v}`).join(' ') : '';
+      const lvStr = item.bonus?.level > 1 ? `+${item.bonus.level} ` : '';
+      const bonusStr = item.bonus ? Object.entries(item.bonus).filter(([k,v])=>v && k!=='level' && k!=='base').map(([k,v])=>`${k}+${v}`).join(' ') : '';
       return `
       <div class="modal-item" onclick="doEquip('${item.itemId}', '${item.type || slot}')">
-        <span class="rarity-${item.rarity||'common'}">${item.name}</span>
+        <span class="rarity-${item.rarity||'common'}">${lvStr}${item.name}</span>
         <span class="modal-item-stat">${bonusStr}</span>
       </div>`;
     }).join('');
