@@ -4,8 +4,6 @@
 const ITEM_ICONS   = { weapon:'⚔️', armor:'🛡️', accessory:'💍', consumable:'🧪', material:'💎', head:'🪖', headgear:'👑', neck:'📿', hand:'🧤', foot:'👞', accessory_l:'💍', accessory_r:'💍' };
 const RARITY_LABELS= { common:'普通', rare:'稀有', epic:'史詩', legend:'傳說' };
 
-// (SLOT_NAMES 和 SLOT_ICONS 已經在 game-data.js 中定義過了，所以這裡移除避免重複報錯)
-
 let _modalItem = null;
 let _currentBagTab = 'equip'; 
 
@@ -32,13 +30,17 @@ async function loadBag(){
 
   const slots=['head', 'headgear', 'neck', 'weapon', 'armor', 'hand', 'foot', 'accessory_l', 'accessory_r'];
   const equip=c.equipment||[];
+  
   document.getElementById('bag-equip-slots').innerHTML=slots.map(slot=>{
     const e=equip.find(x=>x.slot===slot);
-    const bonusStr=e?.bonus?Object.entries(e.bonus).filter(([,v])=>v).map(([k,v])=>`${k}+${v}`).join(' '):'';
+    const lvStr = e?.bonus?.level > 1 ? `+${e.bonus.level} ` : '';
+    // ✅ 過濾 level 和 base
+    const bonusStr = e?.bonus ? Object.entries(e.bonus).filter(([k,v])=>v && k!=='level' && k!=='base').map(([k,v])=>`${k}+${v}`).join(' ') : '';
+    
     return `<div class="equip-card">
       <span class="equip-card-slot">${SLOT_ICONS[slot]||'📦'} ${SLOT_NAMES[slot]||slot}</span>
       <span class="equip-card-icon">${e?(ITEM_ICONS[e.type||slot]||'📦'):'─'}</span>
-      <span class="equip-card-name rarity-${e?.rarity||'common'}">${e?.name||'未裝備'}</span>
+      <span class="equip-card-name rarity-${e?.rarity||'common'}">${lvStr}${e?.name||'未裝備'}</span>
       <span class="equip-card-stats">${bonusStr||(e?e.rarity:'')}</span>
     </div>`;
   }).join('');
@@ -100,7 +102,8 @@ function openItemModal(idx){
   document.getElementById('modal-type').textContent=`${RARITY_LABELS[item.rarity]||''} · ${item.type==='material'?'素材':item.type==='consumable'?'消耗品':SLOT_NAMES[item.type]||item.type}`;
   
   const bonus=item.bonus||{};
-  const bonusLines=Object.entries(bonus).filter(([,v])=>v).map(([k,v])=>`${k} +${v}`);
+  // ✅ 確保詳細面板也不會顯示隱藏屬性
+  const bonusLines=Object.entries(bonus).filter(([k,v])=>v && k!=='level' && k!=='base').map(([k,v])=>`${k} +${v}`);
   document.getElementById('modal-stats').innerHTML=bonusLines.length?bonusLines.join('<br>'):(item.type==='material'?'製作素材，暫無直接效果':'─');
   
   const canEquip = !['consumable', 'material'].includes(item.type);
