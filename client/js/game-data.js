@@ -64,7 +64,7 @@ const JOB_SKILLS_DB = {
 };
 
 // ════════════════════════════════════════════
-//  ✨ 新版採集系統 - 每種類型獨立等級
+//  ✨ 新版採集系統 - 每種類型獨立等級，每 Tier 5 樣物品
 // ════════════════════════════════════════════
 const GATHER_CONFIG = {
   farm: {
@@ -73,60 +73,66 @@ const GATHER_CONFIG = {
     tickMs: 3000,
     baseXpPer: 8,
     baseGoldPer: 5,
-    // 每個 tier 的物品池 (tier = floor((level-1)/10) + 1)
     tiers: [
-      { // Tier 1 (Lv.1-9)
+      { // Tier 1 (Lv.1-9) - 入門
         items: [
-          { name: '小麥', rarity: 'common', weight: 40 },
-          { name: '藥草', rarity: 'common', weight: 35 },
-          { name: '野花', rarity: 'common', weight: 25 }
+          { name: '小麥',      rarity: 'common', weight: 30 },
+          { name: '藥草',      rarity: 'common', weight: 25 },
+          { name: '野花',      rarity: 'common', weight: 20 },
+          { name: '樹薯',      rarity: 'common', weight: 15 },
+          { name: '野菜',      rarity: 'common', weight: 10 }
         ],
-        xpBonus: 0, goldBonus: 0, rareChance: 5
+        xpBonus: 0, goldBonus: 0
       },
-      { // Tier 2 (Lv.10-19)
+      { // Tier 2 (Lv.10-19) - 初級
         items: [
-          { name: '南瓜', rarity: 'common', weight: 35 },
-          { name: '紅蘿蔔', rarity: 'common', weight: 30 },
-          { name: '馬鈴薯', rarity: 'common', weight: 25 },
-          { name: '稀有藥草', rarity: 'rare', weight: 10 }
+          { name: '南瓜',      rarity: 'common', weight: 25 },
+          { name: '紅蘿蔔',    rarity: 'common', weight: 25 },
+          { name: '馬鈴薯',    rarity: 'common', weight: 20 },
+          { name: '洋蔥',      rarity: 'common', weight: 15 },
+          { name: '稀有藥草',  rarity: 'rare',   weight: 15 }
         ],
-        xpBonus: 20, goldBonus: 15, rareChance: 10
+        xpBonus: 20, goldBonus: 15
       },
-      { // Tier 3 (Lv.20-29)
+      { // Tier 3 (Lv.20-29) - 中級
         items: [
-          { name: '稻米', rarity: 'common', weight: 30 },
-          { name: '棉花', rarity: 'common', weight: 30 },
-          { name: '茶葉', rarity: 'rare', weight: 20 },
-          { name: '高級藥草', rarity: 'rare', weight: 20 }
+          { name: '稻米',      rarity: 'common', weight: 20 },
+          { name: '棉花',      rarity: 'common', weight: 20 },
+          { name: '茶葉',      rarity: 'rare',   weight: 20 },
+          { name: '高級藥草',  rarity: 'rare',   weight: 20 },
+          { name: '薄荷葉',    rarity: 'rare',   weight: 20 }
         ],
-        xpBonus: 40, goldBonus: 30, rareChance: 15
+        xpBonus: 40, goldBonus: 30
       },
-      { // Tier 4 (Lv.30-39)
+      { // Tier 4 (Lv.30-39) - 高級
         items: [
-          { name: '葡萄', rarity: 'rare', weight: 30 },
-          { name: '靈芝', rarity: 'rare', weight: 25 },
-          { name: '人蔘', rarity: 'rare', weight: 25 },
-          { name: '千年靈藥', rarity: 'epic', weight: 20 }
+          { name: '葡萄',      rarity: 'rare',   weight: 20 },
+          { name: '靈芝',      rarity: 'rare',   weight: 20 },
+          { name: '人蔘',      rarity: 'rare',   weight: 20 },
+          { name: '千年靈藥',  rarity: 'epic',   weight: 20 },
+          { name: '月光草',    rarity: 'epic',   weight: 20 }
         ],
-        xpBonus: 60, goldBonus: 50, rareChance: 20
+        xpBonus: 60, goldBonus: 50
       },
-      { // Tier 5 (Lv.40-49)
+      { // Tier 5 (Lv.40-49) - 稀有
         items: [
-          { name: '仙果', rarity: 'epic', weight: 30 },
-          { name: '龍鬚草', rarity: 'epic', weight: 25 },
-          { name: '鳳凰花', rarity: 'epic', weight: 25 },
-          { name: '傳說種子', rarity: 'legend', weight: 20 }
+          { name: '仙果',      rarity: 'epic',   weight: 20 },
+          { name: '龍鬚草',    rarity: 'epic',   weight: 20 },
+          { name: '鳳凰花',    rarity: 'epic',   weight: 20 },
+          { name: '傳說種子',  rarity: 'legend', weight: 20 },
+          { name: '天使之淚',  rarity: 'legend', weight: 20 }
         ],
-        xpBonus: 100, goldBonus: 80, rareChance: 25
+        xpBonus: 100, goldBonus: 80
       },
-      { // Tier 6 (Lv.50+)
+      { // Tier 6 (Lv.50+) - 傳說
         items: [
-          { name: '神之麥穗', rarity: 'legend', weight: 25 },
-          { name: '生命之源', rarity: 'legend', weight: 25 },
-          { name: '永恆之花', rarity: 'legend', weight: 25 },
-          { name: '世界樹嫩芽', rarity: 'legend', weight: 25 }
+          { name: '神之麥穗',  rarity: 'legend', weight: 20 },
+          { name: '生命之源',  rarity: 'legend', weight: 20 },
+          { name: '永恆之花',  rarity: 'legend', weight: 20 },
+          { name: '世界樹嫩芽',rarity: 'legend', weight: 20 },
+          { name: '創世果實',  rarity: 'legend', weight: 20 }
         ],
-        xpBonus: 150, goldBonus: 120, rareChance: 30
+        xpBonus: 150, goldBonus: 120
       }
     ]
   },
@@ -137,58 +143,65 @@ const GATHER_CONFIG = {
     baseXpPer: 10,
     baseGoldPer: 8,
     tiers: [
-      { // Tier 1 (Lv.1-9)
+      { // Tier 1 (Lv.1-9) - 入門
         items: [
-          { name: '鯉魚', rarity: 'common', weight: 45 },
-          { name: '沙丁魚', rarity: 'common', weight: 35 },
-          { name: '小蝦', rarity: 'common', weight: 20 }
+          { name: '鯉魚',      rarity: 'common', weight: 30 },
+          { name: '沙丁魚',    rarity: 'common', weight: 25 },
+          { name: '小蝦',      rarity: 'common', weight: 20 },
+          { name: '貝殼',      rarity: 'common', weight: 15 },
+          { name: '海藻',      rarity: 'common', weight: 10 }
         ],
-        xpBonus: 0, goldBonus: 0, rareChance: 5
+        xpBonus: 0, goldBonus: 0
       },
-      { // Tier 2 (Lv.10-19)
+      { // Tier 2 (Lv.10-19) - 初級
         items: [
-          { name: '鱒魚', rarity: 'common', weight: 35 },
-          { name: '鱸魚', rarity: 'common', weight: 30 },
-          { name: '墨魚', rarity: 'common', weight: 25 },
-          { name: '珍珠貝', rarity: 'rare', weight: 10 }
+          { name: '鱒魚',      rarity: 'common', weight: 25 },
+          { name: '鱸魚',      rarity: 'common', weight: 25 },
+          { name: '墨魚',      rarity: 'common', weight: 20 },
+          { name: '珍珠貝',    rarity: 'rare',   weight: 15 },
+          { name: '河蟹',      rarity: 'rare',   weight: 15 }
         ],
-        xpBonus: 20, goldBonus: 15, rareChance: 10
+        xpBonus: 20, goldBonus: 15
       },
-      { // Tier 3 (Lv.20-29)
+      { // Tier 3 (Lv.20-29) - 中級
         items: [
-          { name: '金槍魚', rarity: 'rare', weight: 30 },
-          { name: '鮭魚', rarity: 'rare', weight: 30 },
-          { name: '章魚', rarity: 'rare', weight: 25 },
-          { name: '珊瑚', rarity: 'rare', weight: 15 }
+          { name: '金槍魚',    rarity: 'rare',   weight: 20 },
+          { name: '鮭魚',      rarity: 'rare',   weight: 20 },
+          { name: '章魚',      rarity: 'rare',   weight: 20 },
+          { name: '珊瑚',      rarity: 'rare',   weight: 20 },
+          { name: '海馬',      rarity: 'rare',   weight: 20 }
         ],
-        xpBonus: 40, goldBonus: 30, rareChance: 15
+        xpBonus: 40, goldBonus: 30
       },
-      { // Tier 4 (Lv.30-39)
+      { // Tier 4 (Lv.30-39) - 高級
         items: [
-          { name: '劍魚', rarity: 'rare', weight: 30 },
-          { name: '龍蝦', rarity: 'rare', weight: 25 },
-          { name: '深海珍珠', rarity: 'epic', weight: 25 },
-          { name: '人魚鱗片', rarity: 'epic', weight: 20 }
+          { name: '劍魚',      rarity: 'rare',   weight: 20 },
+          { name: '龍蝦',      rarity: 'rare',   weight: 20 },
+          { name: '深海珍珠',  rarity: 'epic',   weight: 20 },
+          { name: '人魚鱗片',  rarity: 'epic',   weight: 20 },
+          { name: '藍鰭金槍',  rarity: 'epic',   weight: 20 }
         ],
-        xpBonus: 60, goldBonus: 50, rareChance: 20
+        xpBonus: 60, goldBonus: 50
       },
-      { // Tier 5 (Lv.40-49)
+      { // Tier 5 (Lv.40-49) - 稀有
         items: [
-          { name: '深海巨魷', rarity: 'epic', weight: 30 },
-          { name: '水晶魚', rarity: 'epic', weight: 25 },
-          { name: '海龍鱗', rarity: 'epic', weight: 25 },
-          { name: '遠古巨鯨化石', rarity: 'legend', weight: 20 }
+          { name: '深海巨魷',  rarity: 'epic',   weight: 20 },
+          { name: '水晶魚',    rarity: 'epic',   weight: 20 },
+          { name: '海龍鱗',    rarity: 'epic',   weight: 20 },
+          { name: '遠古巨鯨化石',rarity:'legend',weight: 20 },
+          { name: '塞壬之歌',  rarity: 'legend', weight: 20 }
         ],
-        xpBonus: 100, goldBonus: 80, rareChance: 25
+        xpBonus: 100, goldBonus: 80
       },
-      { // Tier 6 (Lv.50+)
+      { // Tier 6 (Lv.50+) - 傳說
         items: [
-          { name: '海神之淚', rarity: 'legend', weight: 25 },
-          { name: '傳說巨鯨', rarity: 'legend', weight: 25 },
-          { name: '深淵之眼', rarity: 'legend', weight: 25 },
-          { name: '不朽珍珠', rarity: 'legend', weight: 25 }
+          { name: '海神之淚',  rarity: 'legend', weight: 20 },
+          { name: '傳說巨鯨',  rarity: 'legend', weight: 20 },
+          { name: '深淵之眼',  rarity: 'legend', weight: 20 },
+          { name: '不朽珍珠',  rarity: 'legend', weight: 20 },
+          { name: '利維坦之鱗',rarity: 'legend', weight: 20 }
         ],
-        xpBonus: 150, goldBonus: 120, rareChance: 30
+        xpBonus: 150, goldBonus: 120
       }
     ]
   },
@@ -199,58 +212,65 @@ const GATHER_CONFIG = {
     baseXpPer: 6,
     baseGoldPer: 4,
     tiers: [
-      { // Tier 1 (Lv.1-9)
+      { // Tier 1 (Lv.1-9) - 入門
         items: [
-          { name: '普通木材', rarity: 'common', weight: 50 },
-          { name: '樹枝', rarity: 'common', weight: 30 },
-          { name: '樹脂', rarity: 'common', weight: 20 }
+          { name: '普通木材',  rarity: 'common', weight: 30 },
+          { name: '樹枝',      rarity: 'common', weight: 25 },
+          { name: '樹脂',      rarity: 'common', weight: 20 },
+          { name: '枯木',      rarity: 'common', weight: 15 },
+          { name: '樹皮',      rarity: 'common', weight: 10 }
         ],
-        xpBonus: 0, goldBonus: 0, rareChance: 5
+        xpBonus: 0, goldBonus: 0
       },
-      { // Tier 2 (Lv.10-19)
+      { // Tier 2 (Lv.10-19) - 初級
         items: [
-          { name: '硬木', rarity: 'common', weight: 40 },
-          { name: '橡木', rarity: 'common', weight: 30 },
-          { name: '楓木', rarity: 'rare', weight: 20 },
-          { name: '琥珀', rarity: 'rare', weight: 10 }
+          { name: '硬木',      rarity: 'common', weight: 25 },
+          { name: '橡木',      rarity: 'common', weight: 25 },
+          { name: '楓木',      rarity: 'rare',   weight: 20 },
+          { name: '琥珀',      rarity: 'rare',   weight: 15 },
+          { name: '松木',      rarity: 'common', weight: 15 }
         ],
-        xpBonus: 20, goldBonus: 15, rareChance: 10
+        xpBonus: 20, goldBonus: 15
       },
-      { // Tier 3 (Lv.20-29)
+      { // Tier 3 (Lv.20-29) - 中級
         items: [
-          { name: '紫檀木', rarity: 'rare', weight: 35 },
-          { name: '胡桃木', rarity: 'rare', weight: 30 },
-          { name: '神木碎片', rarity: 'rare', weight: 20 },
-          { name: '精靈樹液', rarity: 'rare', weight: 15 }
+          { name: '紫檀木',    rarity: 'rare',   weight: 20 },
+          { name: '胡桃木',    rarity: 'rare',   weight: 20 },
+          { name: '神木碎片',  rarity: 'rare',   weight: 20 },
+          { name: '精靈樹液',  rarity: 'rare',   weight: 20 },
+          { name: '白蠟木',    rarity: 'rare',   weight: 20 }
         ],
-        xpBonus: 40, goldBonus: 30, rareChance: 15
+        xpBonus: 40, goldBonus: 30
       },
-      { // Tier 4 (Lv.30-39)
+      { // Tier 4 (Lv.30-39) - 高級
         items: [
-          { name: '黑檀木', rarity: 'rare', weight: 30 },
-          { name: '鐵木', rarity: 'rare', weight: 30 },
-          { name: '古樹之心', rarity: 'epic', weight: 25 },
-          { name: '世界樹碎片', rarity: 'epic', weight: 15 }
+          { name: '黑檀木',    rarity: 'rare',   weight: 20 },
+          { name: '鐵木',      rarity: 'rare',   weight: 20 },
+          { name: '古樹之心',  rarity: 'epic',   weight: 20 },
+          { name: '世界樹碎片',rarity: 'epic',   weight: 20 },
+          { name: '血檀木',    rarity: 'epic',   weight: 20 }
         ],
-        xpBonus: 60, goldBonus: 50, rareChance: 20
+        xpBonus: 60, goldBonus: 50
       },
-      { // Tier 5 (Lv.40-49)
+      { // Tier 5 (Lv.40-49) - 稀有
         items: [
-          { name: '龍血木', rarity: 'epic', weight: 30 },
-          { name: '星辰木', rarity: 'epic', weight: 25 },
-          { name: '生命之木', rarity: 'epic', weight: 25 },
-          { name: '世界樹之枝', rarity: 'legend', weight: 20 }
+          { name: '龍血木',    rarity: 'epic',   weight: 20 },
+          { name: '星辰木',    rarity: 'epic',   weight: 20 },
+          { name: '生命之木',  rarity: 'epic',   weight: 20 },
+          { name: '世界樹之枝',rarity: 'legend', weight: 20 },
+          { name: '鳳凰木',    rarity: 'legend', weight: 20 }
         ],
-        xpBonus: 100, goldBonus: 80, rareChance: 25
+        xpBonus: 100, goldBonus: 80
       },
-      { // Tier 6 (Lv.50+)
+      { // Tier 6 (Lv.50+) - 傳說
         items: [
-          { name: '永恆神木', rarity: 'legend', weight: 25 },
-          { name: '創世之木', rarity: 'legend', weight: 25 },
-          { name: '虛空之根', rarity: 'legend', weight: 25 },
-          { name: '世界樹核心', rarity: 'legend', weight: 25 }
+          { name: '永恆神木',  rarity: 'legend', weight: 20 },
+          { name: '創世之木',  rarity: 'legend', weight: 20 },
+          { name: '虛空之根',  rarity: 'legend', weight: 20 },
+          { name: '世界樹核心',rarity: 'legend', weight: 20 },
+          { name: '尤格德拉希爾之葉',rarity:'legend',weight: 20 }
         ],
-        xpBonus: 150, goldBonus: 120, rareChance: 30
+        xpBonus: 150, goldBonus: 120
       }
     ]
   },
@@ -261,67 +281,74 @@ const GATHER_CONFIG = {
     baseXpPer: 12,
     baseGoldPer: 10,
     tiers: [
-      { // Tier 1 (Lv.1-9)
+      { // Tier 1 (Lv.1-9) - 入門
         items: [
-          { name: '石頭', rarity: 'common', weight: 45 },
-          { name: '銅礦', rarity: 'common', weight: 35 },
-          { name: '煤礦', rarity: 'common', weight: 20 }
+          { name: '石頭',      rarity: 'common', weight: 30 },
+          { name: '銅礦',      rarity: 'common', weight: 25 },
+          { name: '煤礦',      rarity: 'common', weight: 20 },
+          { name: '砂礫',      rarity: 'common', weight: 15 },
+          { name: '黏土',      rarity: 'common', weight: 10 }
         ],
-        xpBonus: 0, goldBonus: 0, rareChance: 5
+        xpBonus: 0, goldBonus: 0
       },
-      { // Tier 2 (Lv.10-19)
+      { // Tier 2 (Lv.10-19) - 初級
         items: [
-          { name: '鐵礦', rarity: 'common', weight: 35 },
-          { name: '錫礦', rarity: 'common', weight: 30 },
-          { name: '銀礦碎片', rarity: 'rare', weight: 20 },
-          { name: '水晶', rarity: 'rare', weight: 15 }
+          { name: '鐵礦',      rarity: 'common', weight: 25 },
+          { name: '錫礦',      rarity: 'common', weight: 25 },
+          { name: '銀礦碎片',  rarity: 'rare',   weight: 20 },
+          { name: '水晶',      rarity: 'rare',   weight: 15 },
+          { name: '鋅礦',      rarity: 'common', weight: 15 }
         ],
-        xpBonus: 20, goldBonus: 15, rareChance: 10
+        xpBonus: 20, goldBonus: 15
       },
-      { // Tier 3 (Lv.20-29)
+      { // Tier 3 (Lv.20-29) - 中級
         items: [
-          { name: '銀礦', rarity: 'rare', weight: 35 },
-          { name: '秘銀礦', rarity: 'rare', weight: 30 },
-          { name: '寶石原石', rarity: 'rare', weight: 20 },
-          { name: '魔晶碎片', rarity: 'rare', weight: 15 }
+          { name: '銀礦',      rarity: 'rare',   weight: 20 },
+          { name: '秘銀礦',    rarity: 'rare',   weight: 20 },
+          { name: '寶石原石',  rarity: 'rare',   weight: 20 },
+          { name: '魔晶碎片',  rarity: 'rare',   weight: 20 },
+          { name: '鈷礦',      rarity: 'rare',   weight: 20 }
         ],
-        xpBonus: 40, goldBonus: 30, rareChance: 15
+        xpBonus: 40, goldBonus: 30
       },
-      { // Tier 4 (Lv.30-39)
+      { // Tier 4 (Lv.30-39) - 高級
         items: [
-          { name: '金礦', rarity: 'rare', weight: 30 },
-          { name: '鉑金礦', rarity: 'rare', weight: 25 },
-          { name: '魔晶礦石', rarity: 'epic', weight: 25 },
-          { name: '龍晶碎片', rarity: 'epic', weight: 20 }
+          { name: '金礦',      rarity: 'rare',   weight: 20 },
+          { name: '鉑金礦',    rarity: 'rare',   weight: 20 },
+          { name: '魔晶礦石',  rarity: 'epic',   weight: 20 },
+          { name: '龍晶碎片',  rarity: 'epic',   weight: 20 },
+          { name: '鈦礦',      rarity: 'epic',   weight: 20 }
         ],
-        xpBonus: 60, goldBonus: 50, rareChance: 20
+        xpBonus: 60, goldBonus: 50
       },
-      { // Tier 5 (Lv.40-49)
+      { // Tier 5 (Lv.40-49) - 稀有
         items: [
-          { name: '奧利哈鋼', rarity: 'epic', weight: 30 },
-          { name: '隕石礦', rarity: 'epic', weight: 25 },
-          { name: '深淵魔晶', rarity: 'epic', weight: 25 },
-          { name: '賢者之石碎片', rarity: 'legend', weight: 20 }
+          { name: '奧利哈鋼',  rarity: 'epic',   weight: 20 },
+          { name: '隕石礦',    rarity: 'epic',   weight: 20 },
+          { name: '深淵魔晶',  rarity: 'epic',   weight: 20 },
+          { name: '賢者之石碎片',rarity:'legend',weight: 20 },
+          { name: '精金礦',    rarity: 'legend', weight: 20 }
         ],
-        xpBonus: 100, goldBonus: 80, rareChance: 25
+        xpBonus: 100, goldBonus: 80
       },
-      { // Tier 6 (Lv.50+)
+      { // Tier 6 (Lv.50+) - 傳說
         items: [
-          { name: '永恆秘銀', rarity: 'legend', weight: 25 },
-          { name: '創世礦石', rarity: 'legend', weight: 25 },
-          { name: '虛空晶石', rarity: 'legend', weight: 25 },
-          { name: '賢者之石', rarity: 'legend', weight: 25 }
+          { name: '永恆秘銀',  rarity: 'legend', weight: 20 },
+          { name: '創世礦石',  rarity: 'legend', weight: 20 },
+          { name: '虛空晶石',  rarity: 'legend', weight: 20 },
+          { name: '賢者之石',  rarity: 'legend', weight: 20 },
+          { name: '世界之心',  rarity: 'legend', weight: 20 }
         ],
-        xpBonus: 150, goldBonus: 120, rareChance: 30
+        xpBonus: 150, goldBonus: 120
       }
     ]
   }
 };
 
-// 採集經驗值計算公式
-const GATHER_XP_FORMULA = (tier) => 50 + tier * 30; // 每次採集獲得的採集經驗
+// 採集經驗值計算公式 (每次採集獲得的採集技能經驗)
+const GATHER_XP_FORMULA = (tier) => 50 + tier * 30;
 
-// 採集等級所需經驗值 (總經驗 = 等級 * 100)
+// 採集等級所需總經驗值
 const GATHER_LEVEL_XP = (level) => level * 100;
 
 const HOUSE_CONFIG = {
@@ -346,7 +373,7 @@ const CRAFT_DATA = {
   boots:     { name:'輕巧皮靴',  icon:'👞', type:'foot',   req:'枯骨 ×6 · 普通木材 ×1', mats:{'枯骨':6, '普通木材':1}, result:'AGI +5 · DEF +2', category:'armor', rarity:'common', bonus:{AGI:5, DEF:2} },
 };
 
-// ✅ 新增工具資料庫 (支援 Lv1 - 100 升級)
+// ✅ 工具資料庫 (支援 Lv1 - 100 升級)
 const TOOL_DATA = {
   tool_pickaxe: { name: '鐵製鶴嘴鋤', icon: '⛏️', baseReq: {'鐵礦': 2, '普通木材': 1}, desc: '提升採礦速度與產量' },
   tool_axe:     { name: '強化斧頭',   icon: '🪓', baseReq: {'鐵礦': 1, '普通木材': 2}, desc: '提升伐木速度與產量' },
