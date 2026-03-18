@@ -1,0 +1,275 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/cli/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== 用戶系統 ====================
+
+model User {
+  id            String      @id @default(cuid())
+  email         String      @unique
+  password      String
+  name          String
+  gold          Int         @default(1000)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  characters    Character[]
+  marketListings MarketListing[]
+}
+
+// ==================== 角色系統 ====================
+
+enum CharacterClass {
+  WARRIOR    // 劍士
+  MAGE       // 術士
+  ARCHER     // 弓箭手
+}
+
+model Character {
+  id            String         @id @default(cuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  characterClass CharacterClass
+  level         Int            @default(1)
+  exp           Int            @default(0)
+  
+  // 基礎屬性
+  hp            Int            @default(100)
+  maxHp         Int            @default(100)
+  mp            Int            @default(50)
+  maxMp         Int            @default(50)
+  attack        Int            @default(10)
+  defense       Int            @default(5)
+  magic         Int            @default(5)
+  speed         Int            @default(10)
+  critical      Float          @default(0.05)
+  
+  // 位置
+  currentArea   String         @default("village")
+  
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  inventory     Inventory[]
+  partyMembers  PartyMember[]
+  
+  @@unique([userId, name])
+}
+
+// ==================== 物品系統 ====================
+
+enum ItemType {
+  WEAPON      // 武器
+  ARMOR       // 防具
+  ACCESSORY   // 飾品
+  MATERIAL    // 材料
+  POTION      // 藥水
+  MISC        // 雜物
+}
+
+model ItemTemplate {
+  id            String    @id @default(cuid())
+  name          String
+  description   String
+  itemType      ItemType
+  rarity        Int       @default(1) // 1-5 星
+  
+  // 屬性加成
+  attackBonus   Int       @default(0)
+  defenseBonus  Int       @default(0)
+  magicBonus    Int       @default(0)
+  hpBonus       Int       @default(0)
+  mpBonus       Int       @default(0)
+  speedBonus    Int       @default(0)
+  criticalBonus Float     @default(0)
+  
+  basePrice     Int       @default(10)
+  icon          String    @default("📦")
+  
+  createdAt     DateTime  @default(now())
+  inventory     Inventory[]
+  recipeMaterials CraftingRecipeMaterial[]
+  recipeResults CraftingRecipe[]     @relation("RecipeResult")
+  marketListings MarketListing[]
+  monsterDrops  MonsterDrop[]
+  gatheringDrops GatheringDrop[]
+}
+
+model Inventory {
+  id           String       @id @default(cuid())
+  characterId  String
+  character    Character    @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  itemId       String
+  item         ItemTemplate @relation(fields: [itemId], references: [id])
+  quantity     Int          @default(1)
+  equipped     Boolean      @default(false)
+  slot         String?      // 裝備欄位: weapon, armor, accessory
+  
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+// ==================== 怪物系統 ====================
+
+model Monster {
+  id            String    @id @default(cuid())
+  name          String
+  description   String
+  level         Int       @default(1)
+  
+  hp            Int       @default(50)
+  attack        Int       @default(5)
+  defense       Int       @default(3)
+  magic         Int       @default(0)
+  speed         Int       @default(5)
+  
+  expReward     Int       @default(10)
+  goldReward    Int       @default(5)
+  
+  icon          String    @default("👹")
+  area          String    @default("forest")
+  
+  createdAt     DateTime  @default(now())
+  drops         MonsterDrop[]
+  dungeonMonsters DungeonMonster[]
+}
+
+model MonsterDrop {
+  id           String       @id @default(cuid())
+  monsterId    String
+  monster      Monster      @relation(fields: [monsterId], references: [id], onDelete: Cascade)
+  itemId       String
+  item         ItemTemplate @relation(fields: [itemId], references: [id])
+  dropRate     Float        @default(0.1)
+  minQuantity  Int          @default(1)
+  maxQuantity  Int          @default(1)
+}
+
+// ==================== 採集系統 ====================
+
+enum GatheringType {
+  MINING      // 採礦
+  HERBALISM   // 採藥
+  FISHING     // 釣魚
+  WOODCUTTING // 伐木
+}
+
+model GatheringNode {
+  id            String        @id @default(cuid())
+  name          String
+  gatheringType GatheringType
+  levelRequired Int           @default(1)
+  icon          String        @default("🪨")
+  area          String        @default("forest")
+  
+  createdAt     DateTime      @default(now())
+  drops         GatheringDrop[]
+}
+
+model GatheringDrop {
+  id           String        @id @default(cuid())
+  nodeId       String
+  node         GatheringNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  itemId       String
+  item         ItemTemplate  @relation(fields: [itemId], references: [id])
+  dropRate     Float         @default(0.5)
+  minQuantity  Int           @default(1)
+  maxQuantity  Int           @default(3)
+}
+
+// ==================== 製作系統 ====================
+
+model CraftingRecipe {
+  id           String       @id @default(cuid())
+  resultItemId String
+  resultItem   ItemTemplate @relation("RecipeResult", fields: [resultItemId], references: [id])
+  resultQuantity Int        @default(1)
+  requiredLevel Int         @default(1)
+  
+  createdAt    DateTime     @default(now())
+  materials    CraftingRecipeMaterial[]
+}
+
+model CraftingRecipeMaterial {
+  id           String          @id @default(cuid())
+  recipeId     String
+  recipe       CraftingRecipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  itemId       String
+  item         ItemTemplate    @relation(fields: [itemId], references: [id])
+  quantity     Int             @default(1)
+}
+
+// ==================== 迷宮系統 ====================
+
+model Dungeon {
+  id            String           @id @default(cuid())
+  name          String
+  description   String
+  levelRequired Int             @default(1)
+  floors        Int             @default(5)
+  icon          String          @default("🏰")
+  
+  createdAt     DateTime         @default(now())
+  monsters      DungeonMonster[]
+}
+
+model DungeonMonster {
+  id         String   @id @default(cuid())
+  dungeonId  String
+  dungeon    Dungeon  @relation(fields: [dungeonId], references: [id], onDelete: Cascade)
+  monsterId  String
+  monster    Monster  @relation(fields: [monsterId], references: [id])
+  minFloor   Int      @default(1)
+  maxFloor   Int      @default(5)
+  spawnRate  Float    @default(0.3)
+}
+
+// ==================== 組隊系統 ====================
+
+model Party {
+  id          String        @id @default(cuid())
+  name        String
+  leaderId    String
+  maxSize     Int           @default(4)
+  status      String        @default("open") // open, closed, in_dungeon, in_battle
+  dungeonId   String?
+  currentFloor Int?
+  
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  members     PartyMember[]
+}
+
+model PartyMember {
+  id           String    @id @default(cuid())
+  partyId      String
+  party        Party     @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  characterId  String
+  character    Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  role         String    @default("member") // leader, member
+  
+  joinedAt     DateTime  @default(now())
+}
+
+// ==================== 市場系統 ====================
+
+model MarketListing {
+  id          String       @id @default(cuid())
+  sellerId    String
+  seller      User         @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  itemId      String
+  item        ItemTemplate @relation(fields: [itemId], references: [id])
+  quantity    Int          @default(1)
+  pricePerUnit Int         @default(10)
+  status      String       @default("active") // active, sold, cancelled
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
