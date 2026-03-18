@@ -7,6 +7,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, email, password, name } = body;
 
+    // 檢查數據庫連接
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json({ 
+        error: '數據庫未配置，請設置 DATABASE_URL 環境變量' 
+      }, { status: 500 });
+    }
+
     if (action === 'register') {
       // 檢查 email 是否已存在
       const existing = await getUserByEmail(email);
@@ -40,8 +47,11 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: '無效的操作' }, { status: 400 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Auth error:', error);
-    return NextResponse.json({ error: '伺服器錯誤' }, { status: 500 });
+    return NextResponse.json({ 
+      error: error.message || '伺服器錯誤',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, { status: 500 });
   }
 }

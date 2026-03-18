@@ -11,7 +11,7 @@ import {
 } from '@/lib/game-data-neon';
 import { itemsMap } from '@/lib/game-data-neon';
 
-// 獲取市場列表 / 出售物品 / 購買物品
+// 獲取市場列表
 export async function GET() {
   try {
     const listings = await getActiveMarketListings();
@@ -20,12 +20,13 @@ export async function GET() {
       ...l,
       item: itemsMap.get(l.itemId),
     })));
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get market error:', error);
-    return NextResponse.json({ error: '伺服器錯誤' }, { status: 500 });
+    return NextResponse.json({ error: error.message || '伺服器錯誤' }, { status: 500 });
   }
 }
 
+// 出售 / 購買 / 取消
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -101,8 +102,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: '無效的操作' }, { status: 400 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Market error:', error);
-    return NextResponse.json({ error: '伺服器錯誤' }, { status: 500 });
+    return NextResponse.json({ error: error.message || '伺服器錯誤' }, { status: 500 });
   }
 }

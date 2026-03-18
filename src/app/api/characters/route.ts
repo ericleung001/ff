@@ -29,9 +29,9 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ error: '缺少參數' }, { status: 400 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get characters error:', error);
-    return NextResponse.json({ error: '伺服器錯誤' }, { status: 500 });
+    return NextResponse.json({ error: error.message || '伺服器錯誤' }, { status: 500 });
   }
 }
 
@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
     const character = await createCharacter(userId, name, characterClass);
     
     return NextResponse.json(character);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create character error:', error);
-    return NextResponse.json({ error: '伺服器錯誤' }, { status: 500 });
+    return NextResponse.json({ error: error.message || '伺服器錯誤' }, { status: 500 });
   }
 }
 
@@ -67,9 +67,9 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json(character);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update character error:', error);
-    return NextResponse.json({ error: '伺服器錯誤' }, { status: 500 });
+    return NextResponse.json({ error: error.message || '伺服器錯誤' }, { status: 500 });
   }
 }
 
@@ -85,8 +85,8 @@ export async function DELETE(request: NextRequest) {
     await deleteCharacter(characterId);
     
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Delete character error:', error);
-    return NextResponse.json({ error: '伺服器錯誤' }, { status: 500 });
+    return NextResponse.json({ error: error.message || '伺服器錯誤' }, { status: 500 });
   }
 }

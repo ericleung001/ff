@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === 'recipes') {
-      // 添加材料物品信息
       const recipesWithItems = recipes.map(r => ({
         ...r,
         resultItem: itemsMap.get(r.resultItemId),
@@ -40,7 +39,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === 'gathering-nodes') {
-      // 添加掉落物品信息
       const nodesWithItems = gatheringNodes.map(n => ({
         ...n,
         drops: n.drops.map(d => ({
@@ -77,8 +75,8 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ error: '無效的請求' }, { status: 400 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get game data error:', error);
-    return NextResponse.json({ error: '伺服器錯誤' }, { status: 500 });
+    return NextResponse.json({ error: error.message || '伺服器錯誤' }, { status: 500 });
   }
 }
