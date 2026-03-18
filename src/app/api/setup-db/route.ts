@@ -83,6 +83,23 @@ export async function GET() {
     `;
     console.log('✓ market_listings table created');
 
+    // 創建房間表
+    await sql`
+      CREATE TABLE IF NOT EXISTS rooms (
+        id VARCHAR(50) PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        is_public BOOLEAN DEFAULT TRUE,
+        password VARCHAR(100),
+        host_id VARCHAR(50) NOT NULL,
+        host_name VARCHAR(100) NOT NULL,
+        max_players INTEGER DEFAULT 4,
+        players JSONB DEFAULT '[]',
+        status VARCHAR(20) DEFAULT 'waiting',
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    console.log('✓ rooms table created');
+
     // 創建索引以提升性能
     try {
       await sql`CREATE INDEX IF NOT EXISTS idx_characters_user_id ON characters(user_id)`;
@@ -96,7 +113,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       message: '數據庫表創建成功！',
-      tables: ['users', 'characters', 'inventory', 'market_listings'],
+      tables: ['users', 'characters', 'inventory', 'market_listings', 'rooms'],
       indexes: ['idx_characters_user_id', 'idx_inventory_character_id', 'idx_market_status']
     });
 

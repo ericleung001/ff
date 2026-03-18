@@ -264,18 +264,20 @@ export default function GamePage() {
   // 載入遊戲數據
   const loadGameData = async () => {
     try {
-      const [monstersData, dungeonsData, nodesData, recipesData, marketData] = await Promise.all([
+      const [monstersData, dungeonsData, nodesData, recipesData, marketData, roomsData] = await Promise.all([
         apiCall('/game-data?type=monsters').catch(() => []),
         apiCall('/game-data?type=dungeons').catch(() => []),
         apiCall('/game-data?type=gathering-nodes').catch(() => []),
         apiCall('/game-data?type=recipes').catch(() => []),
         apiCall('/market').catch(() => []),
+        apiCall('/rooms').catch(() => []),
       ]);
       setMonsters(monstersData);
       setDungeons(dungeonsData);
       setGatheringNodes(nodesData);
       setRecipes(recipesData);
       setMarketListings(marketData);
+      setRooms(roomsData);
     } catch (error) {
       console.error('載入遊戲數據失敗', error);
     }
@@ -599,109 +601,143 @@ export default function GamePage() {
   // ==================== 房間系統 ====================
   
   // 創建房間
-  const createRoom = () => {
+  const createRoom = async () => {
     if (!currentCharacter) return;
     
-    const room: Room = {
-      id: `room_${Date.now()}`,
-      name: newRoomForm.name || `${currentCharacter.name}的房間`,
-      isPublic: newRoomForm.isPublic,
-      password: newRoomForm.isPublic ? undefined : newRoomForm.password,
-      hostId: currentCharacter.id,
-      hostName: currentCharacter.name,
-      maxPlayers: 4,
-      players: [{
-        id: currentCharacter.id,
-        name: currentCharacter.name,
-        level: currentCharacter.level,
-        characterClass: currentCharacter.characterClass,
-      }],
-      status: 'waiting',
-    };
-    
-    setRooms(prev => [...prev, room]);
-    setCurrentRoom(room);
-    setShowRoomDialog(false);
-    setNewRoomForm({ name: '', isPublic: true, password: '' });
-    showNotification('房間已創建！');
+    try {
+      setLoading(true);
+      const room = await apiCall('/rooms', {
+        method: 'POST',
+        body: {
+          action: 'create',
+          name: newRoomForm.name || `${currentCharacter.name}的房間`,
+          isPublic: newRoomForm.isPublic,
+          password: newRoomForm.isPublic ? undefined : newRoomForm.password,
+          hostId: currentCharacter.id,
+          hostName: currentCharacter.name,
+          player: {
+            id: currentCharacter.id,
+            name: currentCharacter.name,
+            level: currentCharacter.level,
+            characterClass: currentCharacter.characterClass,
+          }
+        }
+      });
+      
+      setRooms(prev => [...prev, room]);
+      setCurrentRoom(room);
+      setShowRoomDialog(false);
+      setNewRoomForm({ name: '', isPublic: true, password: '' });
+      showNotification('房間已創建！');
+    } catch (error: any) {
+      showNotification(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 加入房間
-  const joinRoom = (room: Room) => {
+  const joinRoom = async (room: Room) => {
     if (!currentCharacter) return;
     
-    if (!room.isPublic && room.password !== joinRoomPassword) {
-      showNotification('密碼錯誤！');
-      return;
+    try {
+      setLoading(true);
+      const updatedRoom = await apiCall('/rooms', {
+        method: 'POST',
+        body: {
+          action: 'join',
+          roomId: room.id,
+          password: joinRoomPassword,
+          player: {
+            id: currentCharacter.id,
+            name: currentCharacter.name,
+            level: currentCharacter.level,
+            characterClass: currentCharacter.characterClass,
+          }
+        }
+      });
+      
+      // 重新載入房間列表
+      const roomsData = await apiCall('/rooms');
+      setRooms(roomsData);
+      setCurrentRoom(updatedRoom);
+      setJoinRoomPassword('');
+      showNotification('已加入房間！');
+    } catch (error: any) {
+      showNotification(error.message);
+    } finally {
+      setLoading(false);
     }
-    
-    if (room.players.length >= room.maxPlayers) {
-      showNotification('房間已滿！');
-      return;
-    }
-    
-    const updatedRoom = {
-      ...room,
-      players: [...room.players, {
-        id: currentCharacter.id,
-        name: currentCharacter.name,
-        level: currentCharacter.level,
-        characterClass: currentCharacter.characterClass,
-      }],
-    };
-    
-    setRooms(prev => prev.map(r => r.id === room.id ? updatedRoom : r));
-    setCurrentRoom(updatedRoom);
-    setJoinRoomPassword('');
-    showNotification('已加入房間！');
   };
 
   // 離開房間
-  const leaveRoom = () => {
+  const leaveRoom = async () => {
     if (!currentRoom || !currentCharacter) return;
     
-    if (currentRoom.hostId === currentCharacter.id) {
-      // 房主離開，刪除房間
-      setRooms(prev => prev.filter(r => r.id !== currentRoom.id));
-    } else {
-      // 普通玩家離開
-      const updatedRoom = {
-        ...currentRoom,
-        players: currentRoom.players.filter(p => p.id !== currentCharacter.id),
-      };
-      setRooms(prev => prev.map(r => r.id === currentRoom.id ? updatedRoom : r));
+    try {
+      setLoading(true);
+      await apiCall('/rooms', {
+        method: 'POST',
+        body: {
+          action: 'leave',
+          roomId: currentRoom.id,
+          player: {
+            id: currentCharacter.id
+          }
+        }
+      });
+      
+      // 重新載入房間列表
+      const roomsData = await apiCall('/rooms');
+      setRooms(roomsData);
+      setCurrentRoom(null);
+    } catch (error: any) {
+      showNotification(error.message);
+    } finally {
+      setLoading(false);
     }
-    
-    setCurrentRoom(null);
   };
 
   // 開始多人戰鬥
-  const startMultiplayerBattle = (monster: Monster) => {
+  const startMultiplayerBattle = async (monster: Monster) => {
     if (!currentCharacter || !currentRoom) return;
     
-    // 計算隊伍總屬性
-    const totalAttack = currentCharacter.attack; // 簡化：實際應該計算所有隊員
-    const totalDefense = currentCharacter.defense;
-    
-    setBattleState({
-      inBattle: true,
-      isMultiplayer: true,
-      monster: monster,
-      playerHp: currentCharacter.hp,
-      playerMaxHp: currentCharacter.maxHp,
-      monsterHp: monster.hp,
-      monsterMaxHp: monster.hp,
-      turn: 1,
-      logs: [{ id: 0, type: 'info', message: `⚔️ 多人戰鬥開始！隊伍 VS ${monster.icon} ${monster.name}` }],
-      lastDamage: 0,
-      lastMonsterDamage: 0,
-      playerTurn: true,
-    });
-    
-    // 更新房間狀態
-    const updatedRoom = { ...currentRoom, status: 'in_battle' as const };
-    setRooms(prev => prev.map(r => r.id === currentRoom.id ? updatedRoom : r));
-    setCurrentRoom(updatedRoom);
+    try {
+      // 通知 API 更新房間狀態
+      await apiCall('/rooms', {
+        method: 'POST',
+        body: {
+          action: 'start',
+          roomId: currentRoom.id
+        }
+      });
+      
+      // 計算隊伍總屬性
+      const totalAttack = currentCharacter.attack; // 簡化：實際應該計算所有隊員
+      const totalDefense = currentCharacter.defense;
+      
+      setBattleState({
+        inBattle: true,
+        isMultiplayer: true,
+        monster: monster,
+        playerHp: currentCharacter.hp,
+        playerMaxHp: currentCharacter.maxHp,
+        monsterHp: monster.hp,
+        monsterMaxHp: monster.hp,
+        turn: 1,
+        logs: [{ id: 0, type: 'info', message: `⚔️ 多人戰鬥開始！隊伍 VS ${monster.icon} ${monster.name}` }],
+        lastDamage: 0,
+        lastMonsterDamage: 0,
+        playerTurn: true,
+      });
+      
+      // 更新房間狀態
+      const updatedRoom = { ...currentRoom, status: 'in_battle' as const };
+      setRooms(prev => prev.map(r => r.id === currentRoom.id ? updatedRoom : r));
+      setCurrentRoom(updatedRoom);
+    } catch (error: any) {
+      showNotification(error.message);
+    }
   };
 
   // ==================== 其他功能 ====================
@@ -1225,7 +1261,13 @@ export default function GamePage() {
 
         {/* 主內容區 */}
         <div className="flex-1">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs value={activeTab} onValueChange={(tab) => {
+            setActiveTab(tab);
+            // 切換到房間標籤時刷新房間列表
+            if (tab === 'rooms') {
+              apiCall('/rooms').then(setRooms).catch(() => {});
+            }
+          }} className="w-full">
             <TabsList className="bg-slate-800/90 border border-slate-700 w-full justify-start">
               <TabsTrigger value="village" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300">
                 🏘️ 村莊
