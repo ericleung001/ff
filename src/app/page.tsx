@@ -1197,7 +1197,7 @@ export default function GamePage() {
                     {inventory.length === 0 ? (
                       <div className="text-slate-500 text-center py-4">背包是空的</div>
                     ) : (
-                      inventory.map(inv => (
+                      inventory.filter(inv => inv.item).map(inv => (
                         <div key={inv.id} className="flex items-center justify-between p-2 bg-slate-700/50 rounded-lg">
                           <div className="flex items-center gap-2">
                             <span className="text-lg">{inv.item.icon}</span>
@@ -1888,15 +1888,15 @@ export default function GamePage() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {marketListings.map(listing => (
+                    {marketListings.filter(l => l.item).map(listing => (
                       <Card key={listing.id} className="bg-slate-700/50 border-slate-600">
                         <CardHeader className="pb-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <span className="text-2xl">{listing.item.icon}</span>
+                              <span className="text-2xl">{listing.item?.icon || '?'}</span>
                               <div>
-                                <CardTitle className="text-white">{listing.item.name}</CardTitle>
-                                <div className="text-amber-400 text-xs">{'★'.repeat(listing.item.rarity)}</div>
+                                <CardTitle className="text-white">{listing.item?.name || '未知物品'}</CardTitle>
+                                <div className="text-amber-400 text-xs">{'★'.repeat(listing.item?.rarity || 1)}</div>
                               </div>
                             </div>
                             <Badge className="bg-blue-500/20 text-blue-300">x{listing.quantity}</Badge>
@@ -1905,7 +1905,7 @@ export default function GamePage() {
                         <CardContent className="space-y-2 text-sm">
                           <div className="flex justify-between text-slate-400">
                             <span>賣家:</span>
-                            <span className="text-white">{listing.seller.name}</span>
+                            <span className="text-white">{listing.seller?.name || '未知'}</span>
                           </div>
                           <div className="flex justify-between text-slate-400">
                             <span>單價:</span>
