@@ -39,13 +39,31 @@ export async function createUser(email: string, password: string, name: string) 
 export async function getUserById(id: string) {
   const sql = getSql();
   const result = await sql`SELECT * FROM users WHERE id = ${id}`;
-  return result[0] || null;
+  if (!result[0]) return null;
+  
+  const row = result[0];
+  return {
+    id: row.id,
+    email: row.email,
+    password: row.password,
+    name: row.name,
+    gold: row.gold,
+  };
 }
 
 export async function getUserByEmail(email: string) {
   const sql = getSql();
   const result = await sql`SELECT * FROM users WHERE email = ${email}`;
-  return result[0] || null;
+  if (!result[0]) return null;
+  
+  const row = result[0];
+  return {
+    id: row.id,
+    email: row.email,
+    password: row.password,
+    name: row.name,
+    gold: row.gold,
+  };
 }
 
 export async function updateUserGold(userId: string, amount: number) {
@@ -83,7 +101,6 @@ export async function getCharactersByUserId(userId: string) {
   const sql = getSql();
   const results = await sql`SELECT * FROM characters WHERE user_id = ${userId}`;
   
-  // 轉換字段名為駝峰命名
   return results.map((row: any) => ({
     id: row.id,
     userId: row.user_id,
@@ -134,17 +151,22 @@ export async function getCharacterById(id: string) {
 export async function updateCharacter(id: string, updates: Record<string, any>) {
   const sql = getSql();
   
-  // 字段名映射
+  // 字段名映射 (駝峰 -> 蛇形)
   const fieldMap: Record<string, string> = {
     maxHp: 'max_hp',
     maxMp: 'max_mp',
     currentArea: 'current_area',
     characterClass: 'character_class',
+    userId: 'user_id',
   };
   
   for (const [key, value] of Object.entries(updates)) {
     const dbKey = fieldMap[key] || key;
-    await sql`UPDATE characters SET ${sql(dbKey)} = ${value} WHERE id = ${id}`;
+    try {
+      await sql`UPDATE characters SET ${sql(dbKey)} = ${value} WHERE id = ${id}`;
+    } catch (e) {
+      console.error(`Failed to update ${dbKey}:`, e);
+    }
   }
   
   return getCharacterById(id);
@@ -192,14 +214,13 @@ export async function addInventoryItem(characterId: string, itemId: string, quan
   
   if (existing.length > 0) {
     const item = existing[0];
-    await sql`
-      UPDATE inventory SET quantity = quantity + ${quantity} WHERE id = ${item.id}
-    `;
+    const newQty = item.quantity + quantity;
+    await sql`UPDATE inventory SET quantity = ${newQty} WHERE id = ${item.id}`;
     return {
       id: item.id,
       characterId,
       itemId,
-      quantity: item.quantity + quantity,
+      quantity: newQty,
       equipped: false,
     };
   }
@@ -228,7 +249,8 @@ export async function removeInventoryItem(characterId: string, itemId: string, q
   if (item.quantity === quantity) {
     await sql`DELETE FROM inventory WHERE id = ${item.id}`;
   } else {
-    await sql`UPDATE inventory SET quantity = quantity - ${quantity} WHERE id = ${item.id}`;
+    const newQty = item.quantity - quantity;
+    await sql`UPDATE inventory SET quantity = ${newQty} WHERE id = ${item.id}`;
   }
   
   return true;
@@ -255,7 +277,15 @@ export async function createMarketListing(sellerId: string, sellerName: string, 
     VALUES (${id}, ${sellerId}, ${sellerName}, ${itemId}, ${quantity}, ${pricePerUnit}, 'active')
   `;
   
-  return { id, sellerId, sellerName, itemId, quantity, pricePerUnit, status: 'active' };
+  return { 
+    id, 
+    sellerId, 
+    sellerName, 
+    itemId, 
+    quantity, 
+    pricePerUnit, 
+    status: 'active' 
+  };
 }
 
 export async function getActiveMarketListings() {

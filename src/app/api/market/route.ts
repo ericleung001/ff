@@ -17,8 +17,14 @@ export async function GET() {
     const listings = await getActiveMarketListings();
     
     return NextResponse.json(listings.map(l => ({
-      ...l,
-      item: itemsMap.get(l.itemId),
+      id: l.id,
+      sellerId: l.sellerId,
+      seller: { name: l.sellerName }, // 確保 seller.name 格式正確
+      itemId: l.itemId,
+      item: itemsMap.get(l.itemId) || null,
+      quantity: l.quantity,
+      pricePerUnit: l.pricePerUnit,
+      status: l.status,
     })));
   } catch (error: any) {
     console.error('Get market error:', error);
@@ -33,6 +39,10 @@ export async function POST(request: NextRequest) {
     const { action, userId, characterId, itemId, quantity, pricePerUnit, listingId } = body;
 
     if (action === 'sell') {
+      if (!userId || !characterId || !itemId || !quantity || !pricePerUnit) {
+        return NextResponse.json({ error: '缺少必要參數' }, { status: 400 });
+      }
+
       const user = await getUserById(userId);
       if (!user) {
         return NextResponse.json({ error: '用戶不存在' }, { status: 400 });
@@ -41,16 +51,32 @@ export async function POST(request: NextRequest) {
       // 從背包移除物品
       const removed = await removeInventoryItem(characterId, itemId, quantity);
       if (!removed) {
-        return NextResponse.json({ error: '物品數量不足' }, { status: 400 });
+        return NextResponse.json({ error: '物品數量不足或物品不存在' }, { status: 400 });
       }
 
-      // 上架
-      const listing = await createMarketListing(userId, user.name, itemId, quantity, pricePerUnit);
+      // 上架 - 使用 user.name 作為賣家名稱
+      const listing = await createMarketListing(
+        userId, 
+        user.name, 
+        itemId, 
+        quantity, 
+        pricePerUnit
+      );
 
-      return NextResponse.json({ success: true, listing });
+      return NextResponse.json({ 
+        success: true, 
+        listing: {
+          ...listing,
+          item: itemsMap.get(itemId)
+        }
+      });
     }
 
     if (action === 'buy') {
+      if (!listingId || !userId || !characterId || !quantity) {
+        return NextResponse.json({ error: '缺少必要參數' }, { status: 400 });
+      }
+
       const listing = await getMarketListingById(listingId);
       if (!listing || listing.status !== 'active') {
         return NextResponse.json({ error: '商品不存在或已售出' }, { status: 400 });
@@ -84,10 +110,18 @@ export async function POST(request: NextRequest) {
         await updateMarketListing(listingId, { quantity: listing.quantity - quantity });
       }
 
-      return NextResponse.json({ success: true, totalPrice });
+      return NextResponse.json({ 
+        success: true, 
+        totalPrice,
+        item: itemsMap.get(listing.itemId)
+      });
     }
 
     if (action === 'cancel') {
+      if (!listingId || !userId || !characterId) {
+        return NextResponse.json({ error: '缺少必要參數' }, { status: 400 });
+      }
+
       const listing = await getMarketListingById(listingId);
 
       if (!listing || listing.sellerId !== userId) {

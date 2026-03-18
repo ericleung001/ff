@@ -13,6 +13,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { characterId, recipeId } = body;
 
+    if (!characterId || !recipeId) {
+      return NextResponse.json({ error: '缺少參數' }, { status: 400 });
+    }
+
     const character = await getCharacterById(characterId);
     if (!character) {
       return NextResponse.json({ error: '角色不存在' }, { status: 400 });
@@ -24,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 檢查等級要求
-    if (character.level < recipe.requiredLevel) {
+    if (character.level < (recipe.requiredLevel || 1)) {
       return NextResponse.json({ error: `需要等級 ${recipe.requiredLevel}` }, { status: 400 });
     }
 
@@ -56,8 +60,8 @@ export async function POST(request: NextRequest) {
         quantity: recipe.resultQuantity,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Crafting error:', error);
-    return NextResponse.json({ error: '伺服器錯誤' }, { status: 500 });
+    return NextResponse.json({ error: error.message || '伺服器錯誤' }, { status: 500 });
   }
 }

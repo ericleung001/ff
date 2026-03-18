@@ -39,15 +39,15 @@ export async function GET() {
         character_class VARCHAR(20) NOT NULL,
         level INTEGER DEFAULT 1 NOT NULL,
         exp INTEGER DEFAULT 0 NOT NULL,
-        hp INTEGER NOT NULL,
-        max_hp INTEGER NOT NULL,
-        mp INTEGER NOT NULL,
-        max_mp INTEGER NOT NULL,
-        attack INTEGER NOT NULL,
-        defense INTEGER NOT NULL,
-        magic INTEGER NOT NULL,
-        speed INTEGER NOT NULL,
-        critical INTEGER NOT NULL,
+        hp INTEGER DEFAULT 100 NOT NULL,
+        max_hp INTEGER DEFAULT 100 NOT NULL,
+        mp INTEGER DEFAULT 50 NOT NULL,
+        max_mp INTEGER DEFAULT 50 NOT NULL,
+        attack INTEGER DEFAULT 10 NOT NULL,
+        defense INTEGER DEFAULT 5 NOT NULL,
+        magic INTEGER DEFAULT 5 NOT NULL,
+        speed INTEGER DEFAULT 5 NOT NULL,
+        critical INTEGER DEFAULT 5 NOT NULL,
         current_area VARCHAR(50) DEFAULT 'village',
         created_at TIMESTAMP DEFAULT NOW()
       )
@@ -58,9 +58,9 @@ export async function GET() {
     await sql`
       CREATE TABLE IF NOT EXISTS inventory (
         id VARCHAR(50) PRIMARY KEY,
-        character_id VARCHAR(50) NOT NULL REFERENCES characters(id),
+        character_id VARCHAR(50) NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
         item_id VARCHAR(50) NOT NULL,
-        quantity INTEGER NOT NULL,
+        quantity INTEGER NOT NULL DEFAULT 1,
         equipped BOOLEAN DEFAULT FALSE,
         slot VARCHAR(50),
         created_at TIMESTAMP DEFAULT NOW()
@@ -83,10 +83,21 @@ export async function GET() {
     `;
     console.log('✓ market_listings table created');
 
+    // 創建索引以提升性能
+    try {
+      await sql`CREATE INDEX IF NOT EXISTS idx_characters_user_id ON characters(user_id)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_inventory_character_id ON inventory(character_id)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_market_status ON market_listings(status)`;
+      console.log('✓ indexes created');
+    } catch (e) {
+      console.log('Index creation skipped (may already exist)');
+    }
+
     return NextResponse.json({
       success: true,
       message: '數據庫表創建成功！',
-      tables: ['users', 'characters', 'inventory', 'market_listings']
+      tables: ['users', 'characters', 'inventory', 'market_listings'],
+      indexes: ['idx_characters_user_id', 'idx_inventory_character_id', 'idx_market_status']
     });
 
   } catch (error: any) {
