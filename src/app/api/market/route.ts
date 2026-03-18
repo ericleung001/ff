@@ -8,13 +8,13 @@ import {
   createMarketListing,
   getMarketListingById,
   updateMarketListing
-} from '@/lib/game-data';
-import { itemsMap } from '@/lib/game-data';
+} from '@/lib/game-data-neon';
+import { itemsMap } from '@/lib/game-data-neon';
 
 // 獲取市場列表 / 出售物品 / 購買物品
 export async function GET() {
   try {
-    const listings = getActiveMarketListings();
+    const listings = await getActiveMarketListings();
     
     return NextResponse.json(listings.map(l => ({
       ...l,
@@ -32,25 +32,25 @@ export async function POST(request: NextRequest) {
     const { action, userId, characterId, itemId, quantity, pricePerUnit, listingId } = body;
 
     if (action === 'sell') {
-      const user = getUserById(userId);
+      const user = await getUserById(userId);
       if (!user) {
         return NextResponse.json({ error: '用戶不存在' }, { status: 400 });
       }
 
       // 從背包移除物品
-      const removed = removeInventoryItem(characterId, itemId, quantity);
+      const removed = await removeInventoryItem(characterId, itemId, quantity);
       if (!removed) {
         return NextResponse.json({ error: '物品數量不足' }, { status: 400 });
       }
 
       // 上架
-      const listing = createMarketListing(userId, user.name, itemId, quantity, pricePerUnit);
+      const listing = await createMarketListing(userId, user.name, itemId, quantity, pricePerUnit);
 
       return NextResponse.json({ success: true, listing });
     }
 
     if (action === 'buy') {
-      const listing = getMarketListingById(listingId);
+      const listing = await getMarketListingById(listingId);
       if (!listing || listing.status !== 'active') {
         return NextResponse.json({ error: '商品不存在或已售出' }, { status: 400 });
       }
@@ -62,40 +62,40 @@ export async function POST(request: NextRequest) {
       const totalPrice = listing.pricePerUnit * quantity;
 
       // 檢查買家金幣
-      const buyer = getUserById(userId);
+      const buyer = await getUserById(userId);
       if (!buyer || buyer.gold < totalPrice) {
         return NextResponse.json({ error: '金幣不足' }, { status: 400 });
       }
 
       // 扣除買家金幣
-      updateUserGold(userId, -totalPrice);
+      await updateUserGold(userId, -totalPrice);
 
       // 增加賣家金幣
-      updateUserGold(listing.sellerId, totalPrice);
+      await updateUserGold(listing.sellerId, totalPrice);
 
       // 添加物品到買家背包
-      addInventoryItem(characterId, listing.itemId, quantity);
+      await addInventoryItem(characterId, listing.itemId, quantity);
 
       // 更新上架狀態
       if (listing.quantity === quantity) {
-        updateMarketListing(listingId, { status: 'sold' });
+        await updateMarketListing(listingId, { status: 'sold' });
       } else {
-        updateMarketListing(listingId, { quantity: listing.quantity - quantity });
+        await updateMarketListing(listingId, { quantity: listing.quantity - quantity });
       }
 
       return NextResponse.json({ success: true, totalPrice });
     }
 
     if (action === 'cancel') {
-      const listing = getMarketListingById(listingId);
+      const listing = await getMarketListingById(listingId);
 
       if (!listing || listing.sellerId !== userId) {
         return NextResponse.json({ error: '無法取消' }, { status: 400 });
       }
 
       // 返還物品
-      addInventoryItem(characterId, listing.itemId, listing.quantity);
-      updateMarketListing(listingId, { status: 'cancelled' });
+      await addInventoryItem(characterId, listing.itemId, listing.quantity);
+      await updateMarketListing(listingId, { status: 'cancelled' });
 
       return NextResponse.json({ success: true });
     }

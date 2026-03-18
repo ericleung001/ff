@@ -1,36 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { 
-  getCharactersByUserId, 
   createCharacter, 
+  getCharactersByUserId, 
+  getCharacterById, 
   updateCharacter, 
-  deleteCharacter,
-  getCharacterCount,
-  getInventoryByCharacterId
-} from '@/lib/game-data';
-import { itemsMap } from '@/lib/game-data';
+  deleteCharacter, 
+  getCharacterCount 
+} from '@/lib/game-data-neon';
 
-// 獲取用戶角色 / 創建角色
+// 獲取用戶角色 / 創建角色 / 刪除角色 / 更新角色
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+    const characterId = searchParams.get('characterId');
 
-    if (!userId) {
-      return NextResponse.json({ error: '缺少用戶ID' }, { status: 400 });
+    if (characterId) {
+      const character = await getCharacterById(characterId);
+      if (!character) {
+        return NextResponse.json({ error: '角色不存在' }, { status: 404 });
+      }
+      return NextResponse.json(character);
     }
 
-    const characters = getCharactersByUserId(userId);
-    
-    // 添加背包信息
-    const charactersWithInventory = characters.map(char => ({
-      ...char,
-      inventory: getInventoryByCharacterId(char.id).map(inv => ({
-        ...inv,
-        item: itemsMap.get(inv.itemId),
-      })),
-    }));
+    if (userId) {
+      const chars = await getCharactersByUserId(userId);
+      return NextResponse.json(chars);
+    }
 
-    return NextResponse.json(charactersWithInventory);
+    return NextResponse.json({ error: '缺少參數' }, { status: 400 });
   } catch (error) {
     console.error('Get characters error:', error);
     return NextResponse.json({ error: '伺服器錯誤' }, { status: 500 });
@@ -43,13 +41,14 @@ export async function POST(request: NextRequest) {
     const { userId, name, characterClass } = body;
 
     // 檢查角色數量限制
-    const count = getCharacterCount(userId);
+    const count = await getCharacterCount(userId);
     if (count >= 3) {
-      return NextResponse.json({ error: '每個帳號最多只能創建3個角色' }, { status: 400 });
+      return NextResponse.json({ error: '每個帳號最多只能創建 3 個角色' }, { status: 400 });
     }
 
     // 創建角色
-    const character = createCharacter(userId, name, characterClass);
+    const character = await createCharacter(userId, name, characterClass);
+    
     return NextResponse.json(character);
   } catch (error) {
     console.error('Create character error:', error);
@@ -62,9 +61,9 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { characterId, updates } = body;
 
-    const character = updateCharacter(characterId, updates);
+    const character = await updateCharacter(characterId, updates);
     if (!character) {
-      return NextResponse.json({ error: '角色不存在' }, { status: 400 });
+      return NextResponse.json({ error: '角色不存在' }, { status: 404 });
     }
 
     return NextResponse.json(character);
@@ -83,7 +82,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: '缺少角色ID' }, { status: 400 });
     }
 
-    deleteCharacter(characterId);
+    await deleteCharacter(characterId);
+    
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Delete character error:', error);

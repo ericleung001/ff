@@ -1,23 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createUser, getUserByEmail } from '@/lib/game-data';
-import { hash, verify } from '@/lib/auth';
+import { createUser, getUserByEmail } from '@/lib/game-data-neon';
 
-// 註冊/登入
+// 註冊 / 登入
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { action, email, password, name } = body;
 
     if (action === 'register') {
-      const existingUser = getUserByEmail(email);
-
-      if (existingUser) {
-        return NextResponse.json({ error: '此信箱已被註冊' }, { status: 400 });
+      // 檢查 email 是否已存在
+      const existing = await getUserByEmail(email);
+      if (existing) {
+        return NextResponse.json({ error: '此電子郵件已被註冊' }, { status: 400 });
       }
 
-      const hashedPassword = await hash(password);
-      const user = createUser(email, hashedPassword, name);
-
+      // 創建新用戶
+      const user = await createUser(email, password, name || '冒險者');
+      
       return NextResponse.json({
         id: user.id,
         email: user.email,
@@ -27,15 +26,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'login') {
-      const user = getUserByEmail(email);
-
-      if (!user) {
-        return NextResponse.json({ error: '用戶不存在' }, { status: 400 });
-      }
-
-      const isValid = await verify(password, user.password);
-      if (!isValid) {
-        return NextResponse.json({ error: '密碼錯誤' }, { status: 400 });
+      const user = await getUserByEmail(email);
+      if (!user || user.password !== password) {
+        return NextResponse.json({ error: '電子郵件或密碼錯誤' }, { status: 401 });
       }
 
       return NextResponse.json({

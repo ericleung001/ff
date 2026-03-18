@@ -1,158 +1,122 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { 
   getCharacterById, 
-  updateCharacter, 
-  updateUserGold, 
-  getInventoryByCharacterId,
-  addInventoryItem
-} from '@/lib/game-data';
-import { monstersMap, itemsMap } from '@/lib/game-data';
+  updateCharacter,
+  addInventoryItem,
+  getUserById,
+  updateUserGold
+} from '@/lib/game-data-neon';
+import { monstersMap, itemsMap } from '@/lib/game-data-neon';
 
-// 單人戰鬥
+// 戰鬥
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { characterId, monsterId } = body;
 
-    const character = getCharacterById(characterId);
+    const character = await getCharacterById(characterId);
+    if (!character) {
+      return NextResponse.json({ error: '角色不存在' }, { status: 400 });
+    }
+
     const monster = monstersMap.get(monsterId);
-
-    if (!character || !monster) {
-      return NextResponse.json({ error: '角色或怪物不存在' }, { status: 400 });
+    if (!monster) {
+      return NextResponse.json({ error: '怪物不存在' }, { status: 400 });
     }
 
-    // 計算裝備加成
-    let totalAttack = character.attack;
-    let totalDefense = character.defense;
-    let totalHp = character.maxHp;
+    // 計算傷害
+    const playerDamage = Math.max(1, character.attack - monster.defense);
+    const monsterDamage = Math.max(1, monster.attack - character.defense);
 
-    const invItems = getInventoryByCharacterId(characterId);
-    for (const inv of invItems) {
-      if (inv.equipped) {
-        const item = itemsMap.get(inv.itemId);
-        if (item) {
-          totalAttack += item.attackBonus;
-          totalDefense += item.defenseBonus;
-          totalHp += item.hpBonus;
-        }
-      }
-    }
-
-    // 模擬戰鬥
-    const battleLog: string[] = [];
-    let characterHp = character.hp;
+    // 模擬戰鬥（簡化版）
+    let playerHp = character.hp;
     let monsterHp = monster.hp;
 
-    battleLog.push(`⚔️ 戰鬥開始！${character.name} VS ${monster.icon} ${monster.name}`);
+    while (playerHp > 0 && monsterHp > 0) {
+      monsterHp -= playerDamage + Math.floor(Math.random() * 5);
+      if (monsterHp <= 0) break;
 
-    let turn = 1;
-    while (characterHp > 0 && monsterHp > 0 && turn <= 20) {
-      // 角色攻擊
-      const playerDamage = Math.max(1, totalAttack - monster.defense + Math.floor(Math.random() * 5));
-      monsterHp = Math.max(0, monsterHp - playerDamage);
-      battleLog.push(`回合 ${turn}: ${character.name} 造成 ${playerDamage} 傷害`);
-
-      if (monsterHp <= 0) {
-        battleLog.push(`🎉 ${monster.name} 被擊敗！`);
-        break;
-      }
-
-      // 怪物攻擊
-      const monsterDamage = Math.max(1, monster.attack - totalDefense + Math.floor(Math.random() * 3));
-      characterHp = Math.max(0, characterHp - monsterDamage);
-      battleLog.push(`回合 ${turn}: ${monster.name} 造成 ${monsterDamage} 傷害`);
-
-      if (characterHp <= 0) {
-        battleLog.push(`💀 ${character.name} 被擊敗...`);
-        break;
-      }
-
-      turn++;
+      playerHp -= monsterDamage + Math.floor(Math.random() * 3);
     }
 
-    const victory = monsterHp <= 0;
+    const victory = playerHp > 0;
 
-    if (victory) {
-      // 計算經驗和金幣
-      const expGain = monster.expReward;
-      const goldGain = monster.goldReward;
-
-      // 計算掉落
-      const drops: { item: any; quantity: number }[] = [];
-      if (monster.drops) {
-        for (const drop of monster.drops) {
-          if (Math.random() < drop.dropRate) {
-            const quantity = Math.floor(
-              Math.random() * (drop.maxQuantity - drop.minQuantity + 1) + drop.minQuantity
-            );
-            const item = itemsMap.get(drop.itemId);
-            if (item) {
-              drops.push({ item, quantity });
-              addInventoryItem(characterId, drop.itemId, quantity);
-            }
-          }
-        }
-      }
-
-      // 更新角色數據
-      let newExp = character.exp + expGain;
-      let newLevel = character.level;
-      let newMaxHp = character.maxHp;
-      let newAttack = character.attack;
-      let newDefense = character.defense;
-      let newMagic = character.magic;
-      let newSpeed = character.speed;
-
-      // 升級檢查
-      const expNeeded = character.level * 100;
-      if (newExp >= expNeeded) {
-        newLevel++;
-        newExp -= expNeeded;
-        newMaxHp += 10;
-        newAttack += 2;
-        newDefense += 1;
-        newMagic += 1;
-        newSpeed += 1;
-        battleLog.push(`🎊 升級了！現在是 Lv.${newLevel}`);
-      }
-
-      // 更新角色
-      updateCharacter(characterId, {
-        hp: characterHp,
-        exp: newExp,
-        level: newLevel,
-        maxHp: newMaxHp,
-        attack: newAttack,
-        defense: newDefense,
-        magic: newMagic,
-        speed: newSpeed,
+    if (!victory) {
+      // 戰敗 - 恢復 30% HP
+      await updateCharacter(characterId, {
+        hp: Math.floor(character.maxHp * 0.3),
       });
-
-      // 更新用戶金幣
-      updateUserGold(character.userId, goldGain);
-
-      return NextResponse.json({
-        victory: true,
-        battleLog,
-        rewards: {
-          exp: expGain,
-          gold: goldGain,
-          drops,
-          levelUp: newLevel > character.level,
-          newLevel,
-        },
-        characterHp,
-      });
-    } else {
-      // 戰敗，恢復一些 HP
-      updateCharacter(characterId, { hp: Math.floor(character.maxHp * 0.3) });
 
       return NextResponse.json({
         victory: false,
-        battleLog,
-        characterHp: Math.floor(character.maxHp * 0.3),
+        message: '戰鬥失敗',
       });
     }
+
+    // 勝利 - 計算獎勵
+    const expGain = monster.expReward;
+    const goldGain = monster.goldReward;
+
+    // 處理掉落物
+    const drops: { item: any; quantity: number }[] = [];
+    if (monster.drops) {
+      for (const drop of monster.drops) {
+        if (Math.random() < drop.dropRate) {
+          const quantity = Math.floor(
+            Math.random() * (drop.maxQuantity - drop.minQuantity + 1) + drop.minQuantity
+          );
+          const item = itemsMap.get(drop.itemId);
+          if (item && quantity > 0) {
+            drops.push({ item, quantity });
+            await addInventoryItem(characterId, drop.itemId, quantity);
+          }
+        }
+      }
+    }
+
+    // 更新角色經驗和金幣
+    const currentExp = character.exp + expGain;
+    const expNeeded = character.level * 100;
+    let newLevel = character.level;
+    let levelUp = false;
+
+    if (currentExp >= expNeeded) {
+      newLevel = character.level + 1;
+      levelUp = true;
+    }
+
+    // 更新角色
+    const updates: any = {
+      exp: currentExp % expNeeded,
+      hp: playerHp,
+    };
+
+    if (levelUp) {
+      updates.level = newLevel;
+      updates.maxHp = character.maxHp + 20;
+      updates.maxMp = character.maxMp + 10;
+      updates.attack = character.attack + 3;
+      updates.defense = character.defense + 2;
+      updates.magic = character.magic + 2;
+      updates.speed = character.speed + 1;
+      updates.hp = updates.maxHp; // 升級滿血
+    }
+
+    await updateCharacter(characterId, updates);
+
+    // 更新用戶金幣
+    await updateUserGold(character.userId, goldGain);
+
+    return NextResponse.json({
+      victory: true,
+      rewards: {
+        exp: expGain,
+        gold: goldGain,
+        drops,
+        levelUp,
+        newLevel: levelUp ? newLevel : undefined,
+      },
+    });
   } catch (error) {
     console.error('Battle error:', error);
     return NextResponse.json({ error: '伺服器錯誤' }, { status: 500 });

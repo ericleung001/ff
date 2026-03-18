@@ -8,7 +8,7 @@ import {
   itemsMap,
   getUserById,
   getInventoryByCharacterId
-} from '@/lib/game-data';
+} from '@/lib/game-data-neon';
 
 // 獲取遊戲數據
 export async function GET(request: NextRequest) {
@@ -56,15 +56,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === 'inventory' && characterId) {
-      const inventory = getInventoryByCharacterId(characterId);
-      return NextResponse.json(inventory.map(inv => ({
+      const inventoryItems = await getInventoryByCharacterId(characterId);
+      return NextResponse.json(inventoryItems.map(inv => ({
         ...inv,
         item: itemsMap.get(inv.itemId),
       })));
     }
 
     if (type === 'user' && userId) {
-      const user = getUserById(userId);
+      const user = await getUserById(userId);
       if (!user) {
         return NextResponse.json({ error: '用戶不存在' }, { status: 404 });
       }
