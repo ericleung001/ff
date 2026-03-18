@@ -163,7 +163,36 @@ export async function updateCharacter(id: string, updates: Record<string, any>) 
   for (const [key, value] of Object.entries(updates)) {
     const dbKey = fieldMap[key] || key;
     try {
-      await sql`UPDATE characters SET ${sql(dbKey)} = ${value} WHERE id = ${id}`;
+      // 使用條件語句來避免動態字段名問題
+      if (dbKey === 'max_hp') {
+        await sql`UPDATE characters SET max_hp = ${value} WHERE id = ${id}`;
+      } else if (dbKey === 'max_mp') {
+        await sql`UPDATE characters SET max_mp = ${value} WHERE id = ${id}`;
+      } else if (dbKey === 'current_area') {
+        await sql`UPDATE characters SET current_area = ${value} WHERE id = ${id}`;
+      } else if (dbKey === 'hp') {
+        await sql`UPDATE characters SET hp = ${value} WHERE id = ${id}`;
+      } else if (dbKey === 'mp') {
+        await sql`UPDATE characters SET mp = ${value} WHERE id = ${id}`;
+      } else if (dbKey === 'exp') {
+        await sql`UPDATE characters SET exp = ${value} WHERE id = ${id}`;
+      } else if (dbKey === 'level') {
+        await sql`UPDATE characters SET level = ${value} WHERE id = ${id}`;
+      } else if (dbKey === 'attack') {
+        await sql`UPDATE characters SET attack = ${value} WHERE id = ${id}`;
+      } else if (dbKey === 'defense') {
+        await sql`UPDATE characters SET defense = ${value} WHERE id = ${id}`;
+      } else if (dbKey === 'magic') {
+        await sql`UPDATE characters SET magic = ${value} WHERE id = ${id}`;
+      } else if (dbKey === 'speed') {
+        await sql`UPDATE characters SET speed = ${value} WHERE id = ${id}`;
+      } else if (dbKey === 'critical') {
+        await sql`UPDATE characters SET critical = ${value} WHERE id = ${id}`;
+      } else if (dbKey === 'name') {
+        await sql`UPDATE characters SET name = ${value} WHERE id = ${id}`;
+      } else {
+        console.warn(`Unknown field to update: ${dbKey}`);
+      }
     } catch (e) {
       console.error(`Failed to update ${dbKey}:`, e);
     }
@@ -333,7 +362,22 @@ export async function updateMarketListing(id: string, updates: Record<string, an
   
   for (const [key, value] of Object.entries(updates)) {
     const dbKey = fieldMap[key] || key;
-    await sql`UPDATE market_listings SET ${sql(dbKey)} = ${value} WHERE id = ${id}`;
+    // 使用條件語句來避免動態字段名問題
+    if (dbKey === 'seller_id') {
+      await sql`UPDATE market_listings SET seller_id = ${value} WHERE id = ${id}`;
+    } else if (dbKey === 'seller_name') {
+      await sql`UPDATE market_listings SET seller_name = ${value} WHERE id = ${id}`;
+    } else if (dbKey === 'item_id') {
+      await sql`UPDATE market_listings SET item_id = ${value} WHERE id = ${id}`;
+    } else if (dbKey === 'price_per_unit') {
+      await sql`UPDATE market_listings SET price_per_unit = ${value} WHERE id = ${id}`;
+    } else if (dbKey === 'quantity') {
+      await sql`UPDATE market_listings SET quantity = ${value} WHERE id = ${id}`;
+    } else if (dbKey === 'status') {
+      await sql`UPDATE market_listings SET status = ${value} WHERE id = ${id}`;
+    } else {
+      console.warn(`Unknown field to update: ${dbKey}`);
+    }
   }
   
   return getMarketListingById(id);
