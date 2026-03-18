@@ -6,6 +6,9 @@ import { dungeons, dungeonsMap } from './game-data/dungeons';
 import { gatheringNodes, gatheringNodesMap } from './game-data/gathering';
 import { recipes, recipesMap } from './game-data/recipes';
 
+// 導出遊戲靜態數據
+export { items, itemsMap, monsters, monstersMap, dungeons, dungeonsMap, gatheringNodes, gatheringNodesMap, recipes, recipesMap };
+
 // 數據庫連接
 const getSql = () => {
   const databaseUrl = process.env.DATABASE_URL;
@@ -14,9 +17,6 @@ const getSql = () => {
   }
   return neon(databaseUrl);
 };
-
-// 導出遊戲靜態數據
-export { items, itemsMap, monsters, monstersMap, dungeons, dungeonsMap, gatheringNodes, gatheringNodesMap, recipes, recipesMap };
 
 // ==================== 工具函數 ====================
 export function generateId(): string {
@@ -50,12 +50,7 @@ export async function getUserByEmail(email: string) {
 
 export async function updateUserGold(userId: string, amount: number) {
   const sql = getSql();
-  const user = await getUserById(userId);
-  if (!user) return;
-  
-  await sql`
-    UPDATE users SET gold = gold + ${amount} WHERE id = ${userId}
-  `;
+  await sql`UPDATE users SET gold = gold + ${amount} WHERE id = ${userId}`;
 }
 
 // ==================== 角色操作 ====================
@@ -86,38 +81,69 @@ export async function createCharacter(userId: string, name: string, characterCla
 
 export async function getCharactersByUserId(userId: string) {
   const sql = getSql();
-  return await sql`SELECT * FROM characters WHERE user_id = ${userId}`;
+  const results = await sql`SELECT * FROM characters WHERE user_id = ${userId}`;
+  
+  // 轉換字段名為駝峰命名
+  return results.map((row: any) => ({
+    id: row.id,
+    userId: row.user_id,
+    name: row.name,
+    characterClass: row.character_class,
+    level: row.level,
+    exp: row.exp,
+    hp: row.hp,
+    maxHp: row.max_hp,
+    mp: row.mp,
+    maxMp: row.max_mp,
+    attack: row.attack,
+    defense: row.defense,
+    magic: row.magic,
+    speed: row.speed,
+    critical: row.critical,
+    currentArea: row.current_area,
+  }));
 }
 
 export async function getCharacterById(id: string) {
   const sql = getSql();
   const result = await sql`SELECT * FROM characters WHERE id = ${id}`;
-  return result[0] || null;
+  
+  if (!result[0]) return null;
+  
+  const row = result[0];
+  return {
+    id: row.id,
+    userId: row.user_id,
+    name: row.name,
+    characterClass: row.character_class,
+    level: row.level,
+    exp: row.exp,
+    hp: row.hp,
+    maxHp: row.max_hp,
+    mp: row.mp,
+    maxMp: row.max_mp,
+    attack: row.attack,
+    defense: row.defense,
+    magic: row.magic,
+    speed: row.speed,
+    critical: row.critical,
+    currentArea: row.current_area,
+  };
 }
 
 export async function updateCharacter(id: string, updates: Record<string, any>) {
   const sql = getSql();
   
-  // 構建 SET 子句
-  const setClauses: string[] = [];
-  const values: any[] = [];
+  // 字段名映射
+  const fieldMap: Record<string, string> = {
+    maxHp: 'max_hp',
+    maxMp: 'max_mp',
+    currentArea: 'current_area',
+    characterClass: 'character_class',
+  };
   
-  Object.entries(updates).forEach(([key, value]) => {
-    // 轉換駝峰命名為蛇形命名
-    const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-    setClauses.push(`${dbKey} = ?`);
-    values.push(value);
-  });
-  
-  if (setClauses.length === 0) return getCharacterById(id);
-  
-  // 使用安全的方式更新
-  const character = await getCharacterById(id);
-  if (!character) return null;
-  
-  // 逐個更新字段
   for (const [key, value] of Object.entries(updates)) {
-    const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+    const dbKey = fieldMap[key] || key;
     await sql`UPDATE characters SET ${sql(dbKey)} = ${value} WHERE id = ${id}`;
   }
   
@@ -143,7 +169,16 @@ export async function getCharacterCount(userId: string) {
 // ==================== 背包操作 ====================
 export async function getInventoryByCharacterId(characterId: string) {
   const sql = getSql();
-  return await sql`SELECT * FROM inventory WHERE character_id = ${characterId}`;
+  const results = await sql`SELECT * FROM inventory WHERE character_id = ${characterId}`;
+  
+  return results.map((row: any) => ({
+    id: row.id,
+    characterId: row.character_id,
+    itemId: row.item_id,
+    quantity: row.quantity,
+    equipped: row.equipped,
+    slot: row.slot,
+  }));
 }
 
 export async function addInventoryItem(characterId: string, itemId: string, quantity: number = 1) {
@@ -160,7 +195,13 @@ export async function addInventoryItem(characterId: string, itemId: string, quan
     await sql`
       UPDATE inventory SET quantity = quantity + ${quantity} WHERE id = ${item.id}
     `;
-    return item;
+    return {
+      id: item.id,
+      characterId,
+      itemId,
+      quantity: item.quantity + quantity,
+      equipped: false,
+    };
   }
   
   const id = generateId();
@@ -219,20 +260,49 @@ export async function createMarketListing(sellerId: string, sellerName: string, 
 
 export async function getActiveMarketListings() {
   const sql = getSql();
-  return await sql`SELECT * FROM market_listings WHERE status = 'active'`;
+  const results = await sql`SELECT * FROM market_listings WHERE status = 'active'`;
+  
+  return results.map((row: any) => ({
+    id: row.id,
+    sellerId: row.seller_id,
+    sellerName: row.seller_name,
+    itemId: row.item_id,
+    quantity: row.quantity,
+    pricePerUnit: row.price_per_unit,
+    status: row.status,
+  }));
 }
 
 export async function getMarketListingById(id: string) {
   const sql = getSql();
   const result = await sql`SELECT * FROM market_listings WHERE id = ${id}`;
-  return result[0] || null;
+  
+  if (!result[0]) return null;
+  
+  const row = result[0];
+  return {
+    id: row.id,
+    sellerId: row.seller_id,
+    sellerName: row.seller_name,
+    itemId: row.item_id,
+    quantity: row.quantity,
+    pricePerUnit: row.price_per_unit,
+    status: row.status,
+  };
 }
 
 export async function updateMarketListing(id: string, updates: Record<string, any>) {
   const sql = getSql();
   
+  const fieldMap: Record<string, string> = {
+    sellerId: 'seller_id',
+    sellerName: 'seller_name',
+    itemId: 'item_id',
+    pricePerUnit: 'price_per_unit',
+  };
+  
   for (const [key, value] of Object.entries(updates)) {
-    const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+    const dbKey = fieldMap[key] || key;
     await sql`UPDATE market_listings SET ${sql(dbKey)} = ${value} WHERE id = ${id}`;
   }
   
