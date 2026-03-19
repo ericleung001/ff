@@ -261,21 +261,46 @@ export default function GamePage() {
     }
   }, [user]);
 
+  // 定期刷新房間數據（當在房間內時）
+  useEffect(() => {
+    if (!currentRoom) return;
+    
+    const refreshRoom = async () => {
+      try {
+        const roomsData = await apiCall('/rooms');
+        setRooms(roomsData);
+        // 更新當前房間狀態
+        const updatedRoom = roomsData.find((r: Room) => r.id === currentRoom.id);
+        if (updatedRoom) {
+          setCurrentRoom(updatedRoom);
+        }
+      } catch (e) {
+        console.error('Failed to refresh room', e);
+      }
+    };
+
+    // 每3秒刷新一次
+    const interval = setInterval(refreshRoom, 3000);
+    return () => clearInterval(interval);
+  }, [currentRoom?.id]);
+
   // 載入遊戲數據
   const loadGameData = async () => {
     try {
-      const [monstersData, dungeonsData, nodesData, recipesData, marketData] = await Promise.all([
+      const [monstersData, dungeonsData, nodesData, recipesData, marketData, roomsData] = await Promise.all([
         apiCall('/game-data?type=monsters').catch(() => []),
         apiCall('/game-data?type=dungeons').catch(() => []),
         apiCall('/game-data?type=gathering-nodes').catch(() => []),
         apiCall('/game-data?type=recipes').catch(() => []),
         apiCall('/market').catch(() => []),
+        apiCall('/rooms').catch(() => []),
       ]);
       setMonsters(monstersData);
       setDungeons(dungeonsData);
       setGatheringNodes(nodesData);
       setRecipes(recipesData);
       setMarketListings(marketData);
+      setRooms(roomsData);
     } catch (error) {
       console.error('載入遊戲數據失敗', error);
     }
@@ -1566,8 +1591,29 @@ export default function GamePage() {
                     <Users className="w-6 h-6" />
                     多人組隊
                   </CardTitle>
-                  <CardDescription className="text-slate-400">
-                    創建或加入房間，與其他玩家一起戰鬥！
+                  <CardDescription className="text-slate-400 flex items-center justify-between">
+                    <span>創建或加入房間，與其他玩家一起戰鬥！</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const roomsData = await apiCall('/rooms');
+                          setRooms(roomsData);
+                          if (currentRoom) {
+                            const updatedRoom = roomsData.find((r: Room) => r.id === currentRoom.id);
+                            if (updatedRoom) setCurrentRoom(updatedRoom);
+                          }
+                          showNotification('房間列表已刷新');
+                        } catch (e) {
+                          showNotification('刷新失敗');
+                        }
+                      }}
+                      className="text-slate-400 hover:text-white"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-1" />
+                      刷新
+                    </Button>
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1607,14 +1653,27 @@ export default function GamePage() {
                           {currentRoom.hostId === currentCharacter?.id && currentRoom.players.length >= 2 && (
                             <Button
                               onClick={() => {
-                                const boss = monsters.find(m => m.level >= Math.max(...currentRoom.players.map(p => p.level)));
-                                if (boss) startMultiplayerBattle(boss);
+                                // 選擇合適等級的怪物，如果沒有就選最高等級的
+                                const maxPlayerLevel = Math.max(...currentRoom.players.map(p => p.level));
+                                let boss = monsters.find(m => m.level >= maxPlayerLevel);
+                                if (!boss && monsters.length > 0) {
+                                  // 選擇最高等級的怪物
+                                  boss = monsters.reduce((a, b) => a.level > b.level ? a : b);
+                                }
+                                if (boss) {
+                                  startMultiplayerBattle(boss);
+                                } else {
+                                  showNotification('沒有可用的怪物！');
+                                }
                               }}
                               className="bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-500/50"
                             >
                               <Gamepad2 className="w-4 h-4 mr-2" />
                               開始多人戰鬥
                             </Button>
+                          )}
+                          {currentRoom.hostId === currentCharacter?.id && currentRoom.players.length < 2 && (
+                            <div className="text-amber-400 text-sm">需要至少 2 名玩家才能開始</div>
                           )}
                           <Button
                             onClick={leaveRoom}
